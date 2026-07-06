@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FLYINGSTAR</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght=500;700;900&family=Tajawal:wght=400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  :root{
+    --primary:#3F51B5;
+    --primary-dark:#303F9F;
+    --bg:#F2F2F5;
+    --card:#FFFFFF;
+    --text:#212121;
+    --subtext:#757575;
+    --divider:#E7E7EC;
+    --green:#2E7D32;
+    --red:#C62828;
+    --amber:#B8860B;
+    --active-bg:#F0F2FA;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:'Tajawal',sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  .phone{
+    width:100%;
+    max-width:420px;
+    background:var(--bg);
+    min-height:100vh;
+    padding-bottom:30px;
+  }
+  .appbar{
+    background:var(--primary);
+    color:#fff;
+    padding:18px 16px 16px;
+    text-align:center;
+    position:sticky;
+    top:0;
+    z-index:5;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+  }
+  .appbar h1{
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:19px;
+    margin:0;
+  }
+  .appbar .sub{
+    font-size:11.5px;
+    opacity:.85;
+    margin-top:3px;
+  }
+  .status-pill{
+    position:absolute;
+    top:10px;
+    left:14px;
+    font-size:10px;
+    background:rgba(255,255,255,0.2);
+    padding:3px 8px;
+    border-radius:20px;
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .status-pill.show{opacity:1;}
+  .card{
+    background:var(--card);
+    margin:14px 14px 0;
+    border-radius:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+  .fund-card{
+    padding:16px;
+    text-align:center;
+  }
+  .fund-card .label{
+    font-size:12.5px;
+    color:var(--subtext);
+  }
+  .fund-card input{
+    width:100%;
+    border:none;
+    background:transparent;
+    text-align:center;
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:30px;
+    color:var(--primary);
+    margin-top:4px;
+  }
+  .fund-card input:focus{outline:none;}
+  .section-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--subtext);
+    margin:18px 20px 6px;
+  }
+  .row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 14px;
+    border-bottom:1px solid var(--divider);
+    transition: background-color 0.2s ease;
+  }
+  .row.has-value {
+    background-color: var(--active-bg);
+  }
+  .row:last-child{border-bottom:none;}
+  .row .icon{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:#EEF0FB;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    flex-shrink:0;
+  }
+  .row .label{
+    flex:1;
+    font-size:14px;
+    font-weight:500;
+    min-width:0;
+    cursor: pointer;
+  }
+  .row .label input.edit-input{
+    width:100%;
+    border:none;
+    background:transparent;
+    font-family:'Tajawal',sans-serif;
+    font-size:14px;
+    font-weight:500;
+    color:var(--text);
+    border-bottom:1px solid var(--primary);
+    padding:2px 0;
+  }
+  .edit-btn{
+    background:none;
+    border:none;
+    color:#b0b0b8;
+    font-size:13px;
+    cursor:pointer;
+    padding:4px;
+    flex-shrink:0;
+    border-radius: 4px;
+  }
+  .edit-btn:hover{color:var(--primary); background: #eee;}
+  .item-detail{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .25s ease;
+    background:#FAFAFB;
+  }
+  .item-detail.open{max-height:600px;}
+  .item-detail-inner{
+    padding:8px 14px 12px;
+    border-bottom:1px solid var(--divider);
+  }
+  .item-sub-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 0;
+  }
+  .item-sub-row .sub-name{
+    flex:1;
+    min-width:0;
+    border:none;
+    background:transparent;
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    color:var(--text);
+    border-bottom:1px dashed var(--divider);
+    padding:2px 0;
+  }
+  .item-sub-row .sub-amount{
+    width:76px;
+    text-align:center;
+    font-family:'Cairo',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    color:var(--primary-dark);
+    background:#F5F6FA;
+    border:1px solid var(--divider);
+    border-radius:8px;
+    padding:5px 4px;
+  }
+  .item-sub-row .sub-remove{
+    background:none;
+    border:none;
+    color:#b0b0b8;
+    font-size:15px;
+    cursor:pointer;
+    padding:0 2px;
+    flex-shrink:0;
+  }
+  .item-add-sub{
+    background:none;
+    border:none;
+    color:var(--primary);
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+    padding:6px 0 0;
+  }
+  .row input.amount{
+    width:80px;
+    text-align:center;
+    font-family:'Cairo',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    color:var(--primary-dark);
+    background:#F5F6FA;
+    border:1px solid var(--divider);
+    border-radius:8px;
+    padding:7px 4px;
+  }
+  .row input.amount:focus{
+    outline:2px solid var(--primary);
+    outline-offset:1px;
+  }
+  .total-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 16px;
+  }
+  .total-row .t-label{
+    font-size:14px;
+    font-weight:700;
+  }
+  .total-row .t-value{
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:16px;
+    color:var(--amber);
+  }
+  .remain-card{
+    margin:16px 14px 0;
+    border-radius:14px;
+    padding:16px;
+    text-align:center;
+    color:#fff;
+    background:var(--green);
+    transition:background .2s;
+    box-shadow:0 3px 10px rgba(0,0,0,0.15);
+  }
+  .remain-card.negative{background:var(--red);}
+  .remain-card .label{
+    font-size:12.5px;
+    opacity:.9;
+  }
+  .remain-card .value{
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:28px;
+    margin-top:4px;
+  }
+  .reset-btn{
+    display:block;
+    width:calc(100% - 28px);
+    margin:16px 14px 0;
+    padding:12px;
+    background:transparent;
+    border:1.5px solid var(--primary);
+    color:var(--primary);
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    border-radius:10px;
+    cursor:pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:active{background:#EEF0FB;}
+  .saved-row{
+    padding:11px 14px;
+    border-bottom:1px solid var(--divider);
+    font-size:13px;
+    cursor:pointer;
+  }
+  .saved-row:last-child{border-bottom:none;}
+  .saved-row .s-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .saved-row .s-date{color:var(--subtext);font-size:11.5px;}
+  .saved-row .s-values{font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;}
+  .saved-row .s-values .rem-pos{color:var(--green);}
+  .saved-row .s-values .rem-neg{color:var(--red);}
+  .saved-row .s-del{background:none;border:none;color:#b0b0b8;font-size:15px;cursor:pointer;padding:2px 6px;}
+  .saved-row .s-detail{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .25s ease;
+  }
+  .saved-row.open .s-detail{
+    max-height:400px;
+    margin-top:10px;
+  }
+  .saved-row .s-detail-row{
+    display:flex;
+    justify-content:space-between;
+    padding:5px 4px;
+    font-size:12.5px;
+    color:var(--text);
+    border-top:1px dashed var(--divider);
+  }
+  .saved-row .s-detail-row span:last-child{
+    font-family:'Cairo',sans-serif;
+    font-weight:700;
+    color:var(--primary-dark);
+  }
+  .empty-hint{
+    text-align:center;
+    color:var(--subtext);
+    font-size:12.5px;
+    padding:18px;
+  }
+  footer.note{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--subtext);
+    padding:14px 20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" style="display:none;">
+
+  <div class="appbar" style="position:relative;">
+    <h1>🚛 FLYINGSTAR</h1>
+    <div class="sub">حساب عهدة الشاحنة ومصاريفها</div>
+    <div class="status-pill" id="statusPill">تم الحفظ ✓</div>
+  </div>
+
+  <div class="card" id="tripInfoCard">
+    <label class="row">
+      <span class="icon">🏷️</span>
+      <span class="label"><input type="text" id="tripName" class="edit-input" style="border-bottom:none;" placeholder="اسم الرحلة (مثال: نقلة القاهرة - الإسكندرية)"></span>
+    </label>
+    <label class="row">
+      <span class="icon">🧑‍✈️</span>
+      <span class="label"><input type="text" id="driverName" class="edit-input" style="border-bottom:none;" placeholder="اسم السائق"></span>
+    </label>
+    <label class="row">
+      <span class="icon">📅</span>
+      <span class="label"><input type="date" id="tripDate" class="edit-input" style="border-bottom:none;"></span>
+    </label>
+    <label class="row">
+      <span class="icon">⚖️</span>
+      <span class="label"><input type="text" inputmode="decimal" id="cargoWeight" class="edit-input" style="border-bottom:none;" placeholder="وزن الحمولة (طن)"></span>
+    </label>
+  </div>
+
+  <div class="card fund-card">
+    <div class="label">العهدة المستلمة</div>
+    <input type="text" inputmode="decimal" id="funded" placeholder="0">
+    <button class="item-add-sub" id="fundToggle" title="زيادة العهدة" style="margin-top:6px;">🧾 زيادة العهدة</button>
+  </div>
+  <div class="item-detail" id="fundDetail" style="margin:0 14px;border-radius:0 0 14px 14px;">
+    <div class="item-detail-inner" id="fundDetailInner"></div>
+  </div>
+
+  <div class="section-label">بنود المصاريف</div>
+  <div class="card" id="items"></div>
+
+  <button class="reset-btn" id="addItem" style="margin-top:10px;">+ إضافة بند جديد</button>
+
+  <div class="card">
+    <div class="total-row">
+      <span class="t-label">إجمالي المصروف</span>
+      <span class="t-value" id="total">0 ج.م</span>
+    </div>
+  </div>
+
+  <div class="remain-card" id="remainCard">
+    <div class="label">المتبقي من العهدة</div>
+    <div class="value" id="remain">0 ج.م</div>
+  </div>
+
+  <button class="reset-btn" id="saveTrip" style="background:var(--green);border-color:var(--green);color:#fff;">💾 حفظ الرحلة</button>
+  <button class="reset-btn" id="resetAll">تصفير الرحلة الحالية</button>
+
+  <div class="section-label" id="savedLabel" style="display:none;">الرحلات المحفوظة (دوس على أي رحلة لعرض التفاصيل)</div>
+  <div class="card" id="savedList" style="display:none;"></div>
+
+  <footer class="note" id="footerNote">الأرقام بتتحدث أوتوماتيك أول ما تكتب أي مبلغ · بياناتك بتتحفظ تلقائي على جهازك</footer>
+</div>
+
+<script>
+const items = [
+  {icon:"🛒", label:"ماركت"},
+  {icon:"💳", label:"كرت"},
+  {icon:"🚫", label:"مخالفات"},
+  {icon:"📋", label:"إثبات"},
+  {icon:"🧯", label:"غفرة"},
+  {icon:"📦", label:"حمولة"},
+  {icon:"⛽", label:"جاز 1"},
+  {icon:"⛽", label:"جاز 2"},
+  {icon:"🔧", label:"تعتيق"},
+  {icon:"🛍️", label:"سواق"},
+  {icon:"➕", label:"تباع"},
+  {icon:"🧰", label:"فلاتر"},
+  {icon:"🧊", label:"ثلج"},
+  {icon:"🛢️", label:"رش وتشحيم"},
+  {icon:"🛠️", label:"غيار زيت"},
+  {icon:"🔩", label:"لحام جنوط"},
+  {icon:"🛞", label:"كاوتش"},
+];
+
+const itemsEl = document.getElementById('items');
+const fundedEl = document.getElementById('funded');
+const tripNameEl = document.getElementById('tripName');
+const driverNameEl = document.getElementById('driverName');
+const tripDateEl = document.getElementById('tripDate');
+const cargoWeightEl = document.getElementById('cargoWeight');
+const totalEl = document.getElementById('total');
+const remainEl = document.getElementById('remain');
+const remainCard = document.getElementById('remainCard');
+const statusPill = document.getElementById('statusPill');
+const ocrCameraInput = document.getElementById('ocrCameraInput');
+let activeAmountInputForOcr = null; // يحفظ الحقل المراد تعبئته بعد التصوير
+
+const DRAFT_KEY = 'draft:current-trip';
+let draftSaveTimer = null;
+
+const usingLocalFallback = !window.storage;
+const store = {
+  async get(key){
+    if(window.storage) return await window.storage.get(key, false);
+    const raw = localStorage.getItem(key);
+    if(raw === null) throw new Error('not found');
+    return { key, value: raw, shared:false };
+  },
+  async set(key, value){
+    if(window.storage) return await window.storage.set(key, value, false);
+    localStorage.setItem(key, value);
+    return { key, value, shared:false };
+  },
+  async delete(key){
+    if(window.storage) return await window.storage.delete(key, false);
+    localStorage.removeItem(key);
+    return { key, deleted:true, shared:false };
+  },
+  async list(prefix){
+    if(window.storage) return await window.storage.list(prefix, false);
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+    return { keys, prefix, shared:false };
+  }
+};
+
+function money(n){
+  return n.toLocaleString('en-US') + " ج.م";
+}
+
+function showSavedPill(){
+  statusPill.classList.add('show');
+  clearTimeout(showSavedPill._t);
+  showSavedPill._t = setTimeout(()=> statusPill.classList.remove('show'), 1200);
+}
+
+function validateNumberInput(input) {
+  input.value = input.value.replace(/[^0-9.]/g, '');
+  if ((input.value.match(/\./g) || []).length > 1) {
+    input.value = input.value.replace(/\.+$/, "");
+  }
+}
+
+// دالة تشغيل الكاميرا وتحليل الصورة لقراءة المبلغ
+function triggerOcrForInput(amountInput) {
+  activeAmountInputForOcr = amountInput;
+  ocrCameraInput.click();
+}
+
+ocrCameraInput.addEventListener('change', async (e) => {
+  if (!e.target.files || e.target.files.length === 0 || !activeAmountInputForOcr) return;
+  
+  const file = e.target.files[0];
+  const originalPlaceholder = activeAmountInputForOcr.placeholder;
+  activeAmountInputForOcr.value = '';
+  activeAmountInputForOcr.placeholder = 'جاري المسح...';
+  
+  try {
+    // البدء في معالجة الصورة عبر Tesseract
+    const result = await Tesseract.recognize(file, 'eng');
+    const text = result.data.text;
+    
+    // استخراج كافة الأرقام العشرية من النص المستخرج
+    const matches = text.match(/\d+(\.\d+)?/g);
+    
+    if (matches && matches.length > 0) {
+      // تحويل النصوص إلى أرقام حقيقية
+      const numbers = matches.map(Number);
+      // افتراض أن الرقم الأكبر في الفاتورة هو الإجمالي
+      const maxNumber = Math.max(...numbers);
+      
+      activeAmountInputForOcr.value = maxNumber;
+      activeAmountInputForOcr.placeholder = originalPlaceholder;
+      calc();
+    } else {
+      alert('لم يتم العثور على أرقام واضحة في الصورة، يرجى إدخالها يدويًا.');
+      activeAmountInputForOcr.placeholder = originalPlaceholder;
+    }
+  } catch (error) {
+    console.error(error);
+    alert('حدث خطأ أثناء معالجة الصورة، يرجى المحاولة مرة أخرى.');
+    activeAmountInputForOcr.placeholder = originalPlaceholder;
+  } finally {
+    ocrCameraInput.value = ''; // تصفير الحقل لتفعيل الاختيار القادم
+    activeAmountInputForOcr = null;
+  }
+});
+
+function calc(){
+  let sum = 0;
+  document.querySelectorAll('.amount').forEach(inp=>{
+    const v = parseFloat(inp.value);
+    if(!isNaN(v)) {
+      sum += v;
+      inp.closest('.row').classList.add('has-value');
+    } else {
+      inp.closest('.row').classList.remove('has-value');
+    }
+  });
+  totalEl.textContent = money(sum);
+
+  const funded = parseFloat(fundedEl.value) || 0;
+  const remain = funded - sum;
+  remainEl.textContent = money(remain);
+  remainCard.classList.toggle('negative', remain < 0);
+
+  scheduleDraftSave();
+}
+
+function scheduleDraftSave(){
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(saveDraft, 1000);
+}
+
+const fundToggleBtn = document.getElementById('fundToggle');
+const fundDetailEl = document.getElementById('fundDetail');
+const fundDetailInnerEl = document.getElementById('fundDetailInner');
+let fundExtras = [];
+
+function recalcFunded(){
+  const sum = fundExtras.reduce((s,it)=> s + (parseFloat(it.amount)||0), 0);
+  if(fundExtras.length > 0){
+    fundedEl.value = sum || '';
+    fundedEl.readOnly = true;
+    fundedEl.style.background = '#F0F1FA';
+  }else{
+    fundedEl.readOnly = false;
+    fundedEl.style.background = '';
+  }
+  calc();
+}
+
+function renderFundExtraRows(){
+  fundDetailInnerEl.innerHTML = '';
+  fundExtras.forEach((it, idx)=>{
+    const r = document.createElement('div');
+    r.className = 'item-sub-row';
+    r.innerHTML = `
+      <input type="text" class="sub-name" placeholder="تفاصيل (اختياري)" value="${(it.name||'').replace(/"/g,'&quot;')}">
+      <input type="text" inputmode="decimal" class="sub-amount" placeholder="0" value="${it.amount||''}">
+      <button class="sub-remove" title="حذف">✕</button>
+    `;
+    r.querySelector('.sub-name').addEventListener('input', e=>{
+      fundExtras[idx].name = e.target.value;
+      scheduleDraftSave();
+    });
+    r.querySelector('.sub-amount').addEventListener('input', e=>{
+      validateNumberInput(e.target);
+      fundExtras[idx].amount = e.target.value;
+      recalcFunded();
+      scheduleDraftSave();
+    });
+    r.querySelector('.sub-remove').addEventListener('click', ()=>{
+      fundExtras.splice(idx,1);
+      renderFundExtraRows();
+      recalcFunded();
+      scheduleDraftSave();
+    });
+    fundDetailInnerEl.appendChild(r);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'item-add-sub';
+  addBtn.textContent = '+ إضافة زيادة عهدة';
+  addBtn.addEventListener('click', ()=>{
+    fundExtras.push({name:'', amount:''});
+    renderFundExtraRows();
+    fundDetailEl.classList.add('open');
+    scheduleDraftSave();
+  });
+  fundDetailInnerEl.appendChild(addBtn);
+}
+
+function setFundExtras(arr){
+  fundExtras = (arr || []).map(it=>({name: it.name || '', amount: it.amount != null ? it.amount : ''}));
+  renderFundExtraRows();
+  recalcFunded();
+}
+
+fundToggleBtn.addEventListener('click', ()=>{
+  fundDetailEl.classList.toggle('open');
+});
+
+renderFundExtraRows();
+
+function collectDraft(){
+  const rows = [];
+  itemsEl.querySelectorAll('.row').forEach(row=>{
+    const isCustom = row.classList.contains('custom-row');
+    const nameEl = row.querySelector('.custom-name') || row.querySelector('.label-text');
+    const name = nameEl ? (isCustom ? nameEl.value : nameEl.textContent) : '';
+    const amount = row.querySelector('.amount').value;
+    const icon = row.querySelector('.icon') ? row.querySelector('.icon').textContent : '✏️';
+    const entry = {name, amount, icon, custom: isCustom};
+    if(row._subItems && row._subItems.length){
+      entry.subItems = row._subItems;
+    }
+    rows.push(entry);
+  });
+  return {
+    funded: fundedEl.value,
+    fundExtras: fundExtras,
+    tripName: tripNameEl.value,
+    driverName: driverNameEl.value,
+    tripDate: tripDateEl.value,
+    cargoWeight: cargoWeightEl.value,
+    rows
+  };
+}
+
+async function saveDraft(){
+  try{
+    await store.set(DRAFT_KEY, JSON.stringify(collectDraft()));
+    showSavedPill();
+  }catch(e){
+    console.error('تعذر حفظ المسودة تلقائيًا', e);
+  }
+}
+
+async function loadDraft(){
+  try{
+    const res = await store.get(DRAFT_KEY);
+    if(!res || !res.value) return false;
+    const draft = JSON.parse(res.value);
+    fundedEl.value = draft.funded || '';
+    if(draft.fundExtras && draft.fundExtras.length){
+      setFundExtras(draft.fundExtras);
+      fundDetailEl.classList.add('open');
+    }
+    tripNameEl.value = draft.tripName || '';
+    driverNameEl.value = draft.driverName || '';
+    tripDateEl.value = draft.tripDate || tripDateEl.value;
+    cargoWeightEl.value = draft.cargoWeight || '';
+
+    const rows = itemsEl.querySelectorAll('.row');
+    let fixedIndex = 0;
+    (draft.rows || []).forEach(saved=>{
+      if(!saved.custom && fixedIndex < rows.length){
+        const row = rows[fixedIndex];
+        const amountInp = row.querySelector('.amount');
+        if(amountInp) amountInp.value = saved.amount || '';
+        if(saved.subItems && saved.subItems.length && row._setSubItems){
+          row._setSubItems(saved.subItems);
+          if(row._detailEl) row._detailEl.classList.add('open');
+        }
+        fixedIndex++;
+      }else if(saved.custom){
+        const newRow = addCustomRow(saved.name, saved.amount, saved.icon);
+        if(saved.subItems && saved.subItems.length && newRow && newRow._setSubItems){
+          newRow._setSubItems(saved.subItems);
+          if(newRow._detailEl) newRow._detailEl.classList.add('open');
+        }
+      }
+    });
+    return true;
+  }catch(e){
+    console.error('تعذر تحميل المسودة', e);
+    return false;
+  }
+}
+
+function addCustomRow(name='', amount='', icon='✏️'){
+  const row = document.createElement('div');
+  row.className = 'row custom-row';
+  row.innerHTML = `
+    <span class="icon">${icon}</span>
+    <span class="label"><input type="text" class="custom-name" placeholder="اسم البند" value="${name.replace(/"/g,'&quot;')}" style="width:100%;border:none;background:transparent;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:500;color:var(--text);border-bottom:1px solid var(--divider);padding:2px 0;"></span>
+    <button class="edit-btn item-camera" title="تصوير الإيصال">📷</button>
+    <button class="edit-btn item-toggle" title="تفاصيل إضافية">🧾</button>
+    <input type="text" inputmode="decimal" class="amount" placeholder="0" value="${amount}">
+    <button class="remove-btn" title="حذف البند" style="background:none;border:none;color:#b0b0b8;font-size:17px;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
+  `;
+  const amtInp = row.querySelector('.amount');
+  amtInp.addEventListener('input', (e) => {
+    validateNumberInput(e.target);
+    calc();
+  });
+  row.querySelector('.item-camera').addEventListener('click', () => triggerOcrForInput(amtInp));
+  row.querySelector('.custom-name').addEventListener('input', scheduleDraftSave);
+  setupExpandable(row);
+  row.querySelector('.remove-btn').addEventListener('click', ()=>{
+    row._detailEl.remove();
+    row.remove();
+    calc();
+  });
+  itemsEl.appendChild(row);
+  itemsEl.appendChild(row._detailEl);
+  return row;
+}
+
+document.getElementById('addItem').addEventListener('click', ()=> addCustomRow());
+fundedEl.addEventListener('input', (e) => {
+  validateNumberInput(e.target);
+  calc();
+});
+tripNameEl.addEventListener('input', scheduleDraftSave);
+driverNameEl.addEventListener('input', scheduleDraftSave);
+tripDateEl.addEventListener('input', scheduleDraftSave);
+cargoWeightEl.addEventListener('input', (e) => {
+  validateNumberInput(e.target);
+  scheduleDraftSave();
+});
+
+if(!tripDateEl.value){
+  const today = new Date();
+  const iso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  tripDateEl.value = iso;
+}
+
+document.getElementById('resetAll').addEventListener('click', ()=>{
+  if(!window.confirm('متأكد إنك عايز تصفّر الرحلة الحالية؟ البيانات دي مش رحلة محفوظة وهتتمسح.')) return;
+  fundedEl.value = '';
+  setFundExtras([]);
+  fundDetailEl.classList.remove('open');
+  tripNameEl.value = '';
+  driverNameEl.value = '';
+  cargoWeightEl.value = '';
+  const today = new Date();
+  tripDateEl.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  itemsEl.querySelectorAll('.row').forEach(row=>{
+    if(row._setSubItems) row._setSubItems([]);
+    if(row._detailEl) row._detailEl.classList.remove('open');
+  });
+  itemsEl.querySelectorAll('.custom-row').forEach(r=>{
+    if(r._detailEl) r._detailEl.remove();
+    r.remove();
+  });
+  document.querySelectorAll('.amount').forEach(inp => inp.value = '');
+  calc();
+});
+
+function setupExpandable(row){
+  let subItems = [];
+  const amountInput = row.querySelector('.amount');
+  const toggleBtn = row.querySelector('.item-toggle');
+
+  const detail = document.createElement('div');
+  detail.className = 'item-detail';
+  const inner = document.createElement('div');
+  inner.className = 'item-detail-inner';
+  detail.appendChild(inner);
+
+  function recalcParent(){
+    const sum = subItems.reduce((s,it)=> s + (parseFloat(it.amount)||0), 0);
+    if(subItems.length > 0){
+      amountInput.value = sum || '';
+      amountInput.readOnly = true;
+      amountInput.style.background = '#EDEDF3';
+    }else{
+      amountInput.readOnly = false;
+      amountInput.style.background = '';
+    }
+    calc();
+  }
+
+  function renderSubRows(){
+    inner.innerHTML = '';
+    subItems.forEach((it, idx)=>{
+      const r = document.createElement('div');
+      r.className = 'item-sub-row';
+      r.innerHTML = `
+        <input type="text" class="sub-name" placeholder="تفاصيل (اختياري)" value="${(it.name||'').replace(/"/g,'&quot;')}">
+        <input type="text" inputmode="decimal" class="sub-amount" placeholder="0" value="${it.amount||''}">
+        <button class="sub-remove" title="حذف">✕</button>
+      `;
+      r.querySelector('.sub-name').addEventListener('input', e=>{
+        subItems[idx].name = e.target.value;
+        scheduleDraftSave();
+      });
+      r.querySelector('.sub-amount').addEventListener('input', e=>{
+        validateNumberInput(e.target);
+        subItems[idx].amount = e.target.value;
+        recalcParent();
+        scheduleDraftSave();
+      });
+      r.querySelector('.sub-remove').addEventListener('click', ()=>{
+        subItems.splice(idx,1);
+        renderSubRows();
+        recalcParent();
+        scheduleDraftSave();
+      });
+      inner.appendChild(r);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'item-add-sub';
+    addBtn.textContent = '+ إضافة تفصيل إضافي';
+    addBtn.addEventListener('click', ()=>{
+      subItems.push({name:'', amount:''});
+      renderSubRows();
+      detail.classList.add('open');
+      scheduleDraftSave();
+    });
+    inner.appendChild(addBtn);
+  }
+
+  toggleBtn.addEventListener('click', ()=>{
+    detail.classList.toggle('open');
+  });
+
+  renderSubRows();
+
+  row._subItems = subItems;
+  row._setSubItems = (arr)=>{
+    subItems = (arr || []).map(it=>({name: it.name || '', amount: it.amount != null ? it.amount : ''}));
+    row._subItems = subItems;
+    renderSubRows();
+    recalcParent();
+  };
+  row._detailEl = detail;
+}
+
+items.forEach(item=>{
+  try{
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <span class="icon">${item.icon}</span>
+      <span class="label"><span class="label-text">${item.label}</span></span>
+      <button class="edit-btn" title="تعديل اسم البند">✏️</button>
+      <button class="edit-btn item-camera" title="تصوير الإيصال">📷</button>
+      <button class="edit-btn item-toggle" title="تفاصيل إضافية">🧾</button>
+      <input type="text" inputmode="decimal" class="amount" placeholder="0">
+    `;
+    const amtInp = row.querySelector('.amount');
+    amtInp.addEventListener('input', (e) => {
+      validateNumberInput(e.target);
+      calc();
+    });
+    row.querySelector('.item-camera').addEventListener('click', () => triggerOcrForInput(amtInp));
+    row.querySelector('.edit-btn').addEventListener('click', ()=>{
+      const labelSpan = row.querySelector('.label');
+      const textSpan = row.querySelector('.label-text');
+      const confirmed = window.confirm(`هل تريد تعديل اسم البند "${textSpan.textContent}"؟`);
+      if(!confirmed) return;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'edit-input';
+      input.value = textSpan.textContent;
+      labelSpan.innerHTML = '';
+      labelSpan.appendChild(input);
+      input.focus();
+      input.select();
+
+      function save(){
+        const newName = input.value.trim() || textSpan.textContent;
+        labelSpan.innerHTML = `<span class="label-text">${newName}</span>`;
+        scheduleDraftSave();
+      }
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', e=>{
+        if(e.key === 'Enter') input.blur();
+      });
+    });
+    setupExpandable(row);
+    itemsEl.appendChild(row);
+    itemsEl.appendChild(row._detailEl);
+  }catch(err){
+    console.error('تعذر إضافة بند', item, err);
+  }
+});
+
+const savedListEl = document.getElementById('savedList');
+const savedLabelEl = document.getElementById('savedLabel');
+
+function formatTripDate(isoDate){
+  if(!isoDate) return new Date().toLocaleDateString('ar-EG', {dateStyle:'medium'});
+  const [y,m,d] = isoDate.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('ar-EG', {dateStyle:'medium'});
+}
+
+function collectCurrentTrip(){
+  const rows = [];
+  itemsEl.querySelectorAll('.row').forEach(row=>{
+    const nameEl = row.querySelector('.label-text') || row.querySelector('.custom-name');
+    const name = nameEl ? (nameEl.value || nameEl.textContent) : '';
+    const amount = parseFloat(row.querySelector('.amount').value) || 0;
+    if(amount !== 0 || name){
+      const entry = {name, amount};
+      if(row._subItems && row._subItems.length){
+        entry.subItems = row._subItems
+          .filter(it => (parseFloat(it.amount)||0) !== 0 || it.name)
+          .map(it => ({name: it.name || '', amount: parseFloat(it.amount) || 0}));
+      }
+      rows.push(entry);
+    }
+  });
+  const funded = parseFloat(fundedEl.value) || 0;
+  const total = rows.reduce((s,r)=>s+r.amount, 0);
+  const fundExtrasClean = fundExtras
+    .filter(it => (parseFloat(it.amount)||0) !== 0 || it.name)
+    .map(it => ({name: it.name || '', amount: parseFloat(it.amount) || 0}));
+  return {
+    tripName: tripNameEl.value.trim(),
+    driverName: driverNameEl.value.trim(),
+    date: formatTripDate(tripDateEl.value),
+    cargoWeight: cargoWeightEl.value.trim(),
+    savedAt: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
+    funded, fundExtras: fundExtrasClean, rows, total, remain: funded - total
+  };
+}
+
+function renderTripDetailHtml(trip){
+  let fundHtml = '';
+  if(trip.fundExtras && trip.fundExtras.length){
+    fundHtml += `<div class="s-detail-row" style="font-weight:700;"><span>العهدة</span><span>${trip.funded.toLocaleString('en-US')} ج.م</span></div>`;
+    fundHtml += trip.fundExtras.map(s=>
+      `<div class="s-detail-row" style="padding-right:16px;font-size:11.5px;color:var(--subtext);"><span>↳ ${s.name || 'بدون تفاصيل'}</span><span>${s.amount.toLocaleString('en-US')} ج.م</span></div>`
+    ).join('');
+  }
+  const nonZeroRows = trip.rows.filter(r => r.amount !== 0);
+  if(nonZeroRows.length === 0 && !fundHtml){
+    return `<div class="s-detail-row"><span>مفيش بنود مسجلة</span><span></span></div>`;
+  }
+  const rowsHtml = nonZeroRows.map(r=>{
+    let sub = '';
+    if(r.subItems && r.subItems.length){
+      sub = r.subItems.map(s=>
+        `<div class="s-detail-row" style="padding-right:16px;font-size:11.5px;color:var(--subtext);"><span>↳ ${s.name || 'بدون تفاصيل'}</span><span>${s.amount.toLocaleString('en-US')} ج.م</span></div>`
+      ).join('');
+    }
+    return `<div class="s-detail-row"><span>${r.name || 'بدون اسم'}</span><span>${r.amount.toLocaleString('en-US')} ج.م</span></div>${sub}`;
+  }).join('');
+  return fundHtml + rowsHtml;
+}
+
+async function renderSavedTrips(){
+  try{
+    const list = await store.list('trip:');
+    const keys = (list && list.keys) ? list.keys : [];
+    if(keys.length === 0){
+      savedLabelEl.style.display = 'none';
+      savedListEl.style.display = 'none';
+      return;
+    }
+    savedLabelEl.style.display = 'block';
+    savedListEl.style.display = 'block';
+    savedListEl.innerHTML = '<div class="empty-hint">جارِ التحميل...</div>';
+    const sortedKeys = keys.slice().sort().reverse();
+    const rowsHtml = [];
+
+    for(const key of sortedKeys){
+      let trip;
+      try{
+        const res = await store.get(key);
+        trip = JSON.parse(res.value);
+      }catch(e){ continue; }
+
+      const row = document.createElement('div');
+      row.className = 'saved-row';
+      row.dataset.key = key;
+      const remClass = trip.remain < 0 ? 'rem-neg' : 'rem-pos';
+      const titleLine = trip.saveTitle ? `<div style="font-weight:700;font-size:13px;margin-bottom:2px;">${trip.saveTitle}</div>` : '';
+      row.innerHTML = `
+        <div class="s-top">
+          <div>
+            ${titleLine}
+            <div class="s-date">${trip.date}${trip.cargoWeight ? ' · ⚖️ ' + trip.cargoWeight + ' طن' : ''}</div>
+            <div class="s-values">مصروف ${trip.total.toLocaleString('en-US')} ج.م · <span class="${remClass}">متبقي ${trip.remain.toLocaleString('en-US')} ج.م</span></div>
+          </div>
+          <button class="s-del" title="حذف">✕</button>
+        </div>
+        <div class="s-detail">${renderTripDetailHtml(trip)}</div>
+      `;
+      row.querySelector('.s-top').addEventListener('click', (e)=>{
+        if(e.target.closest('.s-del')) return;
+        row.classList.toggle('open');
+      });
+      row.querySelector('.s-del').addEventListener('click', async (e)=>{
+        e.stopPropagation();
+        if(!window.confirm('متأكد إنك عايز تحذف الرحلة دي؟ الحذف نهائي.')) return;
+        try{ await store.delete(key); }catch(err){}
+        renderSavedTrips();
+      });
+      rowsHtml.push(row);
+    }
+    savedListEl.innerHTML = '';
+    rowsHtml.forEach(r => savedListEl.appendChild(r));
+  }catch(e){
+    console.error('تعذر تحميل الرحلات المحفوظة', e);
+    savedListEl.innerHTML = '<div class="empty-hint">حصل خطأ أثناء تحميل الرحلات المحفوظة</div>';
+  }
+}
+
+document.getElementById('saveTrip').addEventListener('click', async ()=>{
+  const parts = [];
+  if(tripNameEl.value.trim()) parts.push(tripNameEl.value.trim());
+  if(driverNameEl.value.trim()) parts.push(driverNameEl.value.trim());
+  parts.push(formatTripDate(tripDateEl.value));
+  const autoTitle = parts.join(' - ');
+
+  const trip = collectCurrentTrip();
+  trip.saveTitle = autoTitle;
+  if(trip.funded === 0 && trip.total === 0){
+    if(!window.confirm('الرحلة مفيهاش عهدة ولا مصاريف، تحفظها برضه؟')) return;
+  }
+  const key = `trip:${Date.now()}`;
+  try{
+    const result = await store.set(key, JSON.stringify(trip));
+    if(result){
+      alert(`تم حفظ "${autoTitle}" ✅`);
+      renderSavedTrips();
+    }else{
+      alert('حصل خطأ أثناء الحفظ، حاول تاني.');
+    }
+  }catch(e){
+    alert('حصل خطأ أثناء الحفظ، حاول تاني.');
+  }
+});
+
+(async function init(){
+  if(usingLocalFallback){
+    const note = document.getElementById('footerNote');
+    if(note) note.textContent = 'الأرقام بتتحدث أوتوماتيك أول ما تكتب أي مبلغ · بياناتك محفوظة على نفس المتصفح والجهاز ده (هتتمسح لو مسحت بيانات المتصفح)';
+  }
+  await loadDraft();
+  calc();
+  renderSavedTrips();
+})();
+</script>
+</body>
+</html>
