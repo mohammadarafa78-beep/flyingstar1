@@ -1,15 +1,24 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FLYINGSTAR - حساب عهدة الشاحنة</title>
+<meta name="description" content="تطبيق FLYINGSTAR لحساب عهدة الشاحنة ومصاريفها وتتبع الرحلات المحفوظة.">
+<meta name="theme-color" content="#3F51B5">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FLYINGSTAR">
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   }
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FLYINGSTAR</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght=500;700;900&family=Tajawal:wght=400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
@@ -413,6 +422,11 @@
 
   <button class="reset-btn" id="saveTrip" style="background:var(--green);border-color:var(--green);color:#fff;">💾 حفظ الرحلة</button>
   <button class="reset-btn" id="resetAll">تصفير الرحلة الحالية</button>
+
+  <a href="reports.html" style="display:flex;align-items:center;justify-content:space-between;margin:16px 14px 0;background:var(--card);border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-decoration:none;color:var(--text);">
+    <span style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;">📊 صفحة التقارير الكاملة</span>
+    <span style="color:var(--subtext);font-size:16px;">‹</span>
+  </a>
 
   <div class="section-label" id="savedLabel" style="display:none;">الرحلات المحفوظة (دوس على أي رحلة لعرض التفاصيل)</div>
   <div class="card" id="savedList" style="display:none;"></div>
@@ -1054,6 +1068,7 @@ function collectCurrentTrip(){
     tripName: tripNameEl.value.trim(),
     driverName: driverNameEl.value.trim(),
     date: formatTripDate(tripDateEl.value),
+    tripDateISO: tripDateEl.value || null,
     cargoWeight: cargoWeightEl.value.trim(),
     savedAt: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
     funded, fundExtras: fundExtrasClean, rows, total, remain: funded - total

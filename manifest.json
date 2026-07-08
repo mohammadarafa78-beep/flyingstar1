@@ -1,16 +1,47 @@
 {
   "name": "FlyingStar - حساب العهدة",
   "short_name": "FlyingStar",
+  "description": "تطبيق لحساب عهدة الشاحنة ومصاريفها وتتبع الرحلات المحفوظة",
   "start_url": "index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#F2F2F5",
   "theme_color": "#3F51B5",
   "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2555/2555013.png",
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "التقارير",
+      "short_name": "التقارير",
+      "url": "reports.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

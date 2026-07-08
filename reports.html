@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>التقارير - FLYINGSTAR</title>
+<meta name="description" content="تقارير الرحلات المحفوظة في تطبيق FLYINGSTAR مع فلترة بالتاريخ والسائق وإجماليات.">
+<meta name="theme-color" content="#3F51B5">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FLYINGSTAR">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght=500;700;900&family=Tajawal:wght=400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#3F51B5;
+    --primary-dark:#303F9F;
+    --bg:#F2F2F5;
+    --card:#FFFFFF;
+    --text:#212121;
+    --subtext:#757575;
+    --divider:#E7E7EC;
+    --green:#2E7D32;
+    --red:#C62828;
+    --amber:#B8860B;
+    --active-bg:#F0F2FA;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:'Tajawal',sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  .phone{
+    width:100%;
+    max-width:420px;
+    background:var(--bg);
+    min-height:100vh;
+    padding-bottom:30px;
+  }
+  .appbar{
+    background:var(--primary);
+    color:#fff;
+    padding:16px 16px 16px;
+    position:sticky;
+    top:0;
+    z-index:5;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .appbar .back{
+    color:#fff;
+    text-decoration:none;
+    font-size:20px;
+    line-height:1;
+    padding:4px 6px;
+    border-radius:8px;
+  }
+  .appbar .back:active{background:rgba(255,255,255,0.15);}
+  .appbar-title{
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:17px;
+  }
+  .appbar .sub{
+    font-size:11px;
+    opacity:.85;
+    margin-top:2px;
+  }
+  .card{
+    background:var(--card);
+    margin:14px 14px 0;
+    border-radius:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+  .filters{padding:14px;}
+  .filters .f-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .filters .f-row:last-child{margin-bottom:0;}
+  .filters label{
+    display:block;
+    font-size:11px;
+    color:var(--subtext);
+    margin-bottom:4px;
+  }
+  .filters .f-field{flex:1;min-width:0;}
+  .filters input, .filters select{
+    width:100%;
+    border:1px solid var(--divider);
+    border-radius:8px;
+    padding:9px 8px;
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    background:#F8F8FB;
+    color:var(--text);
+  }
+  .filters input:focus, .filters select:focus{outline:2px solid var(--primary);outline-offset:0;}
+  .clear-filters{
+    background:none;
+    border:none;
+    color:var(--primary);
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+    padding:2px 0 0;
+  }
+  .summary-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:1px;
+    background:var(--divider);
+  }
+  .summary-cell{
+    background:var(--card);
+    padding:14px 8px;
+    text-align:center;
+  }
+  .summary-cell .s-label{font-size:11px;color:var(--subtext);}
+  .summary-cell .s-value{
+    font-family:'Cairo',sans-serif;
+    font-weight:900;
+    font-size:15px;
+    margin-top:4px;
+  }
+  .summary-cell.funded .s-value{color:var(--primary-dark);}
+  .summary-cell.spent .s-value{color:var(--amber);}
+  .summary-cell.remain .s-value{color:var(--green);}
+  .summary-cell.remain.negative .s-value{color:var(--red);}
+  .section-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--subtext);
+    margin:18px 20px 6px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .saved-row{border-bottom:1px solid var(--divider);}
+  .saved-row:last-child{border-bottom:none;}
+  .s-top{padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .s-date{font-size:11.5px;color:var(--subtext);margin-top:2px;}
+  .s-values{font-size:12.5px;margin-top:4px;}
+  .rem-pos{color:var(--green);font-weight:700;}
+  .rem-neg{color:var(--red);font-weight:700;}
+  .s-detail{max-height:0;overflow:hidden;transition:max-height .25s ease;background:#FAFAFB;}
+  .saved-row.open .s-detail{max-height:1000px;}
+  .s-detail-row{display:flex;justify-content:space-between;padding:6px 14px;font-size:12.5px;border-top:1px solid var(--divider);}
+  .empty-hint{padding:26px 16px;text-align:center;color:var(--subtext);font-size:13px;}
+  footer.note{
+    text-align:center;
+    font-size:11px;
+    color:var(--subtext);
+    padding:14px 20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="appbar">
+    <a href="index.html" class="back" title="رجوع">›</a>
+    <div>
+      <div class="appbar-title">📊 التقارير</div>
+      <div class="sub">كل الرحلات المحفوظة بالفلترة والإجماليات</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div class="f-row">
+        <div class="f-field">
+          <label for="fromDate">من تاريخ</label>
+          <input type="date" id="fromDate">
+        </div>
+        <div class="f-field">
+          <label for="toDate">إلى تاريخ</label>
+          <input type="date" id="toDate">
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <label for="driverFilter">السائق</label>
+          <select id="driverFilter">
+            <option value="">كل السائقين</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-row" style="margin-bottom:0;">
+        <button class="clear-filters" id="clearFilters">مسح الفلاتر</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="summary-grid">
+      <div class="summary-cell funded">
+        <div class="s-label">إجمالي العهدة</div>
+        <div class="s-value" id="sumFunded">0 ج.م</div>
+      </div>
+      <div class="summary-cell spent">
+        <div class="s-label">إجمالي المصروف</div>
+        <div class="s-value" id="sumSpent">0 ج.م</div>
+      </div>
+      <div class="summary-cell remain" id="sumRemainCell">
+        <div class="s-label">إجمالي المتبقي</div>
+        <div class="s-value" id="sumRemain">0 ج.م</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">
+    <span id="resultsCount">الرحلات</span>
+  </div>
+  <div class="card" id="tripsList">
+    <div class="empty-hint">جارِ التحميل...</div>
+  </div>
+
+  <footer class="note">دوس على أي رحلة لعرض تفاصيلها بالكامل</footer>
+</div>
+
+<script>
+const usingLocalFallback = !window.storage;
+const store = {
+  async get(key){
+    if(window.storage) return await window.storage.get(key, false);
+    const raw = localStorage.getItem(key);
+    return raw != null ? {key, value: raw, shared:false} : null;
+  },
+  async list(prefix){
+    if(window.storage) return await window.storage.list(prefix, false);
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+    return {keys, prefix, shared:false};
+  }
+};
+
+const fromDateEl = document.getElementById('fromDate');
+const toDateEl = document.getElementById('toDate');
+const driverFilterEl = document.getElementById('driverFilter');
+const clearFiltersBtn = document.getElementById('clearFilters');
+const sumFundedEl = document.getElementById('sumFunded');
+const sumSpentEl = document.getElementById('sumSpent');
+const sumRemainEl = document.getElementById('sumRemain');
+const sumRemainCellEl = document.getElementById('sumRemainCell');
+const resultsCountEl = document.getElementById('resultsCount');
+const tripsListEl = document.getElementById('tripsList');
+
+let allTrips = []; // {key, trip, rawDate}
+
+function fmt(n){
+  return (n || 0).toLocaleString('en-US');
+}
+
+// trip.date is a pre-formatted Arabic string; we also keep rawDate (ISO) separately when available.
+// Since saved trips only store a formatted date string, we parse tripDateISO if present, else fall back to savedAt.
+function getComparableDate(trip){
+  if(trip.tripDateISO) return trip.tripDateISO;
+  if(trip.savedAt){
+    const parsed = new Date(trip.savedAt);
+    if(!isNaN(parsed)) return parsed.toISOString().slice(0,10);
+  }
+  return null;
+}
+
+function renderTripDetailHtml(trip){
+  let fundHtml = '';
+  if(trip.fundExtras && trip.fundExtras.length){
+    fundHtml += `<div class="s-detail-row" style="font-weight:700;"><span>العهدة</span><span>${fmt(trip.funded)} ج.م</span></div>`;
+    fundHtml += trip.fundExtras.map(s=>
+      `<div class="s-detail-row" style="padding-right:22px;font-size:11.5px;color:var(--subtext);"><span>↳ ${s.name || 'بدون تفاصيل'}</span><span>${fmt(s.amount)} ج.م</span></div>`
+    ).join('');
+  }
+  const nonZeroRows = (trip.rows || []).filter(r => r.amount !== 0);
+  const rowsHtml = nonZeroRows.map(r=>{
+    let sub = '';
+    if(r.subItems && r.subItems.length){
+      sub = r.subItems.map(s=>
+        `<div class="s-detail-row" style="padding-right:22px;font-size:11.5px;color:var(--subtext);"><span>↳ ${s.name || 'بدون تفاصيل'}</span><span>${fmt(s.amount)} ج.م</span></div>`
+      ).join('');
+    }
+    return `<div class="s-detail-row"><span>${r.name || 'بدون اسم'}</span><span>${fmt(r.amount)} ج.م</span></div>${sub}`;
+  }).join('');
+  if(!rowsHtml && !fundHtml){
+    return `<div class="s-detail-row"><span>مفيش بنود مسجلة</span><span></span></div>`;
+  }
+  return fundHtml + rowsHtml;
+}
+
+function populateDriverOptions(trips){
+  const drivers = new Set();
+  trips.forEach(({trip}) => { if(trip.driverName) drivers.add(trip.driverName); });
+  const current = driverFilterEl.value;
+  driverFilterEl.innerHTML = '<option value="">كل السائقين</option>' +
+    [...drivers].sort().map(d => `<option value="${d.replace(/"/g,'&quot;')}">${d}</option>`).join('');
+  if(current && drivers.has(current)) driverFilterEl.value = current;
+}
+
+function applyFiltersAndRender(){
+  const from = fromDateEl.value;
+  const to = toDateEl.value;
+  const driver = driverFilterEl.value;
+
+  const filtered = allTrips.filter(({trip}) => {
+    if(driver && trip.driverName !== driver) return false;
+    const cmpDate = getComparableDate(trip);
+    if(from && cmpDate && cmpDate < from) return false;
+    if(to && cmpDate && cmpDate > to) return false;
+    return true;
+  });
+
+  let totalFunded = 0, totalSpent = 0;
+  filtered.forEach(({trip}) => {
+    totalFunded += trip.funded || 0;
+    totalSpent += trip.total || 0;
+  });
+  const totalRemain = totalFunded - totalSpent;
+
+  sumFundedEl.textContent = fmt(totalFunded) + ' ج.م';
+  sumSpentEl.textContent = fmt(totalSpent) + ' ج.م';
+  sumRemainEl.textContent = fmt(totalRemain) + ' ج.م';
+  sumRemainCellEl.classList.toggle('negative', totalRemain < 0);
+
+  resultsCountEl.textContent = `الرحلات (${filtered.length})`;
+
+  if(filtered.length === 0){
+    tripsListEl.innerHTML = '<div class="empty-hint">مفيش رحلات مطابقة للفلتر ده</div>';
+    return;
+  }
+
+  tripsListEl.innerHTML = '';
+  filtered
+    .slice()
+    .sort((a,b) => (b.key || '').localeCompare(a.key || ''))
+    .forEach(({trip}) => {
+      const row = document.createElement('div');
+      row.className = 'saved-row';
+      const remClass = trip.remain < 0 ? 'rem-neg' : 'rem-pos';
+      const titleLine = trip.saveTitle ? `<div style="font-weight:700;font-size:13px;margin-bottom:2px;">${trip.saveTitle}</div>` : '';
+      row.innerHTML = `
+        <div class="s-top">
+          <div>
+            ${titleLine}
+            <div class="s-date">${trip.date || ''}${trip.cargoWeight ? ' · ⚖️ ' + trip.cargoWeight + ' طن' : ''}</div>
+            <div class="s-values">مصروف ${fmt(trip.total)} ج.م · <span class="${remClass}">متبقي ${fmt(trip.remain)} ج.م</span></div>
+          </div>
+          <span style="color:var(--subtext);font-size:16px;">‹</span>
+        </div>
+        <div class="s-detail">${renderTripDetailHtml(trip)}</div>
+      `;
+      row.querySelector('.s-top').addEventListener('click', () => row.classList.toggle('open'));
+      tripsListEl.appendChild(row);
+    });
+}
+
+async function loadAllTrips(){
+  try{
+    const list = await store.list('trip:');
+    const keys = (list && list.keys) ? list.keys : [];
+    if(keys.length === 0){
+      allTrips = [];
+      applyFiltersAndRender();
+      return;
+    }
+    const loaded = [];
+    for(const key of keys){
+      try{
+        const res = await store.get(key);
+        const trip = JSON.parse(res.value);
+        loaded.push({key, trip});
+      }catch(e){ /* تجاهل أي عنصر تالف */ }
+    }
+    allTrips = loaded;
+    populateDriverOptions(allTrips);
+    applyFiltersAndRender();
+  }catch(e){
+    console.error('تعذر تحميل الرحلات', e);
+    tripsListEl.innerHTML = '<div class="empty-hint">حصل خطأ أثناء تحميل الرحلات المحفوظة</div>';
+  }
+}
+
+fromDateEl.addEventListener('change', applyFiltersAndRender);
+toDateEl.addEventListener('change', applyFiltersAndRender);
+driverFilterEl.addEventListener('change', applyFiltersAndRender);
+clearFiltersBtn.addEventListener('click', () => {
+  fromDateEl.value = '';
+  toDateEl.value = '';
+  driverFilterEl.value = '';
+  applyFiltersAndRender();
+});
+
+loadAllTrips();
+</script>
+</body>
+</html>
