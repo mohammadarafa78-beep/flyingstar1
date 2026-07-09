@@ -166,6 +166,12 @@
   .saved-row.open .s-detail{max-height:1000px;}
   .s-detail-row{display:flex;justify-content:space-between;padding:6px 14px;font-size:12.5px;border-top:1px solid var(--divider);}
   .empty-hint{padding:26px 16px;text-align:center;color:var(--subtext);font-size:13px;}
+  .s-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+  .s-pdf, .s-wa{background:none;border:none;font-size:15px;cursor:pointer;padding:2px 6px;}
+  .s-pdf{color:#b0b0b8;}
+  .s-pdf:hover{color:var(--primary);}
+  .s-wa{color:#25D366;}
+  .btn-busy{opacity:.6;pointer-events:none;}
   footer.note{
     text-align:center;
     font-size:11px;
@@ -305,6 +311,203 @@ function renderTripDetailHtml(trip){
   return fundHtml + rowsHtml;
 }
 
+/* ====== تصدير PDF ومشاركة واتساب ====== */
+function money(n){ return fmt(n) + ' ج.م'; }
+
+const _scriptLoadCache = {};
+function loadScriptOnce(src){
+  if(_scriptLoadCache[src]) return _scriptLoadCache[src];
+  _scriptLoadCache[src] = new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('تعذر تحميل مكتبة PDF، تأكد من الاتصال بالإنترنت.'));
+    document.head.appendChild(s);
+  });
+  return _scriptLoadCache[src];
+}
+async function ensurePdfLibs(){
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+}
+
+function escHtml(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sanitizeFilename(str){
+  return String(str || 'رحلة').replace(/[\\/:*?"<>|]/g, '-').trim().slice(0,60) || 'رحلة';
+}
+
+function buildTripFilename(trip){
+  const title = trip.saveTitle || trip.tripName || 'رحلة';
+  return `FlyingStar-${sanitizeFilename(title)}.pdf`;
+}
+
+function buildWhatsAppText(trip){
+  const lines = [];
+  lines.push('🚛 *FLYINGSTAR* - إيصال عهدة ومصاريف');
+  if(trip.saveTitle || trip.tripName) lines.push(`الرحلة: ${trip.saveTitle || trip.tripName}`);
+  if(trip.driverName) lines.push(`السائق: ${trip.driverName}`);
+  lines.push(`التاريخ: ${trip.date || ''}`);
+  if(trip.cargoWeight) lines.push(`الحمولة: ${trip.cargoWeight} طن`);
+  lines.push('');
+  lines.push(`العهدة: ${money(trip.funded || 0)}`);
+  lines.push(`إجمالي المصروف: ${money(trip.total || 0)}`);
+  lines.push(`المتبقي: ${money(trip.remain || 0)}`);
+  const nonZero = (trip.rows || []).filter(r => r.amount);
+  if(nonZero.length){
+    lines.push('');
+    lines.push('تفاصيل البنود:');
+    nonZero.forEach(r => lines.push(`- ${r.name || 'بدون اسم'}: ${money(r.amount)}`));
+  }
+  return lines.join('\n');
+}
+
+function buildReceiptElement(trip){
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;left:-9999px;top:0;width:600px;padding:32px;background:#fff;direction:rtl;font-family:Tajawal,Cairo,sans-serif;color:#212121;';
+  let infoRows = '';
+  const infoPairs = [
+    ['اسم الرحلة', trip.saveTitle || trip.tripName || '—'],
+    ['السائق', trip.driverName || '—'],
+    ['التاريخ', trip.date || '—'],
+    ['الحمولة', trip.cargoWeight ? trip.cargoWeight + ' طن' : '—'],
+  ];
+  infoPairs.forEach(([k,v])=>{
+    infoRows += `<tr><td style="padding:6px 0;color:#757575;font-size:13px;">${escHtml(k)}</td><td style="padding:6px 0;font-weight:700;font-size:14px;text-align:left;">${escHtml(v)}</td></tr>`;
+  });
+
+  let fundRows = '';
+  if(trip.fundExtras && trip.fundExtras.length){
+    fundRows += `<tr><td style="padding:6px 4px;font-weight:700;">العهدة</td><td style="padding:6px 4px;font-weight:700;text-align:left;">${escHtml(money(trip.funded||0))}</td></tr>`;
+    trip.fundExtras.forEach(s=>{
+      fundRows += `<tr><td style="padding:4px 4px 4px 18px;color:#757575;font-size:12.5px;">↳ ${escHtml(s.name || 'بدون تفاصيل')}</td><td style="padding:4px;color:#757575;font-size:12.5px;text-align:left;">${escHtml(money(s.amount||0))}</td></tr>`;
+    });
+  }
+
+  let itemRows = '';
+  const nonZeroRows = (trip.rows || []).filter(r => r.amount);
+  if(nonZeroRows.length === 0 && !fundRows){
+    itemRows = `<tr><td colspan="2" style="padding:10px 4px;color:#757575;text-align:center;">مفيش بنود مسجلة</td></tr>`;
+  } else {
+    nonZeroRows.forEach(r=>{
+      itemRows += `<tr><td style="padding:6px 4px;border-top:1px solid #eee;">${escHtml(r.name || 'بدون اسم')}</td><td style="padding:6px 4px;border-top:1px solid #eee;text-align:left;font-weight:700;">${escHtml(money(r.amount||0))}</td></tr>`;
+      if(r.subItems && r.subItems.length){
+        r.subItems.forEach(s=>{
+          itemRows += `<tr><td style="padding:4px 4px 4px 18px;color:#757575;font-size:12.5px;">↳ ${escHtml(s.name || 'بدون تفاصيل')}</td><td style="padding:4px;color:#757575;font-size:12.5px;text-align:left;">${escHtml(money(s.amount||0))}</td></tr>`;
+        });
+      }
+    });
+  }
+
+  const remainColor = (trip.remain || 0) < 0 ? '#C62828' : '#2E7D32';
+
+  el.innerHTML = `
+    <div style="text-align:center;border-bottom:3px solid #3F51B5;padding-bottom:14px;margin-bottom:18px;">
+      <div style="font-weight:900;font-size:26px;color:#3F51B5;">🚛 FLYINGSTAR</div>
+      <div style="font-size:12.5px;color:#757575;margin-top:4px;">إيصال عهدة ومصاريف شاحنة</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">${infoRows}</table>
+    <div style="font-weight:900;font-size:14px;color:#3F51B5;margin-bottom:8px;">تفاصيل المصاريف</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13.5px;">${fundRows}${itemRows}</table>
+    <table style="width:100%;border-collapse:collapse;margin-top:16px;border-top:2px solid #212121;">
+      <tr><td style="padding:10px 4px 4px;font-weight:700;">إجمالي المصروف</td><td style="padding:10px 4px 4px;text-align:left;font-weight:900;color:#B8860B;">${escHtml(money(trip.total||0))}</td></tr>
+      <tr><td style="padding:4px;font-weight:700;">المتبقي من العهدة</td><td style="padding:4px;text-align:left;font-weight:900;color:${remainColor};">${escHtml(money(trip.remain||0))}</td></tr>
+    </table>
+    <div style="text-align:center;font-size:10.5px;color:#b0b0b8;margin-top:20px;">تم إنشاؤه بواسطة تطبيق FlyingStar بتاريخ ${escHtml(new Date().toLocaleDateString('ar-EG', {dateStyle:'medium'}))}</div>
+  `;
+  return el;
+}
+
+async function tripToPdfBlob(trip){
+  await ensurePdfLibs();
+  const el = buildReceiptElement(trip);
+  document.body.appendChild(el);
+  let blob;
+  try{
+    const canvas = await html2canvas(el, {scale:2, backgroundColor:'#ffffff'});
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new window.jspdf.jsPDF({unit:'mm', format:'a4'});
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgWidth = pageWidth - margin*2;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let heightLeft = imgHeight;
+    let position = margin;
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+    heightLeft -= (pageHeight - margin*2);
+    while(heightLeft > 0){
+      position = margin - (imgHeight - heightLeft);
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - margin*2);
+    }
+    blob = pdf.output('blob');
+  } finally {
+    el.remove();
+  }
+  return blob;
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 3000);
+}
+
+function setBtnBusy(btn, busyText){
+  if(!btn) return () => {};
+  const original = btn.textContent;
+  btn.textContent = busyText;
+  btn.classList.add('btn-busy');
+  return () => { btn.textContent = original; btn.classList.remove('btn-busy'); };
+}
+
+async function savePdfForTrip(trip, btn){
+  const restore = setBtnBusy(btn, '⏳');
+  try{
+    const blob = await tripToPdfBlob(trip);
+    downloadBlob(blob, buildTripFilename(trip));
+  }catch(e){
+    console.error(e);
+    alert('تعذر إنشاء ملف PDF. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.');
+  }finally{
+    restore();
+  }
+}
+
+async function shareTripWhatsApp(trip, btn){
+  const restore = setBtnBusy(btn, '⏳');
+  try{
+    const blob = await tripToPdfBlob(trip);
+    const filename = buildTripFilename(trip);
+    const text = buildWhatsAppText(trip);
+    let file = null;
+    try{ file = new File([blob], filename, {type:'application/pdf'}); }catch(e){}
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'FlyingStar', text});
+    }else{
+      downloadBlob(blob, filename);
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+      alert('تم تحميل ملف PDF على جهازك. المشاركة المباشرة غير مدعومة على متصفحك، افتح واتساب واختر 📎 لإرفاق الملف يدويًا.');
+    }
+  }catch(e){
+    if(e && e.name === 'AbortError') return;
+    console.error(e);
+    alert('تعذر تجهيز المشاركة. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.');
+  }finally{
+    restore();
+  }
+}
+
 function populateDriverOptions(trips){
   const drivers = new Set();
   trips.forEach(({trip}) => { if(trip.driverName) drivers.add(trip.driverName); });
@@ -362,11 +565,25 @@ function applyFiltersAndRender(){
             <div class="s-date">${trip.date || ''}${trip.cargoWeight ? ' · ⚖️ ' + trip.cargoWeight + ' طن' : ''}</div>
             <div class="s-values">مصروف ${fmt(trip.total)} ج.م · <span class="${remClass}">متبقي ${fmt(trip.remain)} ج.م</span></div>
           </div>
-          <span style="color:var(--subtext);font-size:16px;">‹</span>
+          <div class="s-actions">
+            <button class="s-pdf" title="حفظ PDF">📄</button>
+            <button class="s-wa" title="إرسال واتساب">📱</button>
+          </div>
         </div>
         <div class="s-detail">${renderTripDetailHtml(trip)}</div>
       `;
-      row.querySelector('.s-top').addEventListener('click', () => row.classList.toggle('open'));
+      row.querySelector('.s-top').addEventListener('click', (e) => {
+        if(e.target.closest('.s-actions')) return;
+        row.classList.toggle('open');
+      });
+      row.querySelector('.s-pdf').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        savePdfForTrip(trip, e.currentTarget);
+      });
+      row.querySelector('.s-wa').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        shareTripWhatsApp(trip, e.currentTarget);
+      });
       tripsListEl.appendChild(row);
     });
 }

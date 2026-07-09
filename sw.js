@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flyingstar-v2';
+const CACHE_NAME = 'flyingstar-v3';
 const ASSETS = [
   'index.html',
   'reports.html',
