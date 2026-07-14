@@ -1,0 +1,14 @@
+# منع الوصول المباشر لملفات الإعدادات من المتصفح
+<FilesMatch "^config(\.sample)?\.php$">
+    Require all denied
+</FilesMatch>
+
+# لو الاستضافة بتستخدم Apache 2.2 القديم بدل 2.4+، استبدل السطرين اللي فوق بـ:
+# <FilesMatch "^config(\.sample)?\.php$">
+#     Order allow,deny
+#     Deny from all
+# </FilesMatch>
+
+# (اختياري) لو الفرونت إند هيتنادى من دومين مختلف عن الباك إند، فعّل CORS هنا
+# Header set Access-Control-Allow-Origin "https://your-frontend-domain.com"
+# Header set Access-Control-Allow-Credentials "true"
