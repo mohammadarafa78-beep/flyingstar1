@@ -3,1417 +3,752 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FLYINGSTAR - حساب عهدة الشاحنة</title>
-<meta name="description" content="تطبيق FLYINGSTAR لحساب عهدة الشاحنة ومصاريفها وتتبع الرحلات المحفوظة.">
-<meta name="theme-color" content="#3F51B5">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/x-icon" href="icons/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FLYINGSTAR">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght=500;700;900&family=Tajawal:wght=400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<title>Trella Clone - منصة اللوجستيات الذكية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --primary:#3F51B5;
-    --primary-dark:#303F9F;
-    --bg:#F2F2F5;
-    --card:#FFFFFF;
-    --text:#212121;
-    --subtext:#757575;
-    --divider:#E7E7EC;
-    --green:#2E7D32;
-    --red:#C62828;
-    --amber:#B8860B;
-    --active-bg:#F0F2FA;
+  :root {
+    --primary: #111827;
+    --accent: #3b82f6;
+    --accent-dark: #2563eb;
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #1f2937;
+    --text-muted: #4b5563;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    
+    /* ألوان وهوية FLYINGSTAR المدمجة لحساب العهدة */
+    --fs-primary: #3F51B5;
+    --fs-primary-dark: #303F9F;
+    --fs-divider: #E7E7EC;
+    --fs-green: #2E7D32;
+    --fs-red: #C62828;
+    --fs-active-bg: #F0F2FA;
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  body{
-    margin:0;
-    background:var(--bg);
-    font-family:'Tajawal',sans-serif;
-    color:var(--text);
-    display:flex;
-    justify-content:center;
-    min-height:100vh;
-  }
-  .phone{
-    width:100%;
-    max-width:420px;
-    background:var(--bg);
-    min-height:100vh;
-    padding-bottom:30px;
-  }
-  .appbar{
-    background:var(--primary);
-    color:#fff;
-    padding:18px 16px 16px;
-    text-align:center;
-    position:sticky;
-    top:0;
-    z-index:5;
-    box-shadow:0 3px 8px rgba(0,0,0,0.15);
-  }
-  .appbar h1{
-    font-family:'Cairo',sans-serif;
-    font-weight:900;
-    font-size:19px;
-    margin:0;
-  }
-  .appbar .sub{
-    font-size:11.5px;
-    opacity:.85;
-    margin-top:3px;
-  }
-  .status-pill{
-    position:absolute;
-    top:10px;
-    left:14px;
-    font-size:10px;
-    background:rgba(255,255,255,0.2);
-    padding:3px 8px;
-    border-radius:20px;
-    opacity:0;
-    transition:opacity .3s;
-  }
-  .status-pill.show{opacity:1;}
-  .card{
-    background:var(--card);
-    margin:14px 14px 0;
-    border-radius:14px;
-    box-shadow:0 1px 4px rgba(0,0,0,0.08);
-    overflow:hidden;
-  }
-  .fund-card{
-    padding:16px;
-    text-align:center;
-  }
-  .fund-card .label{
-    font-size:12.5px;
-    color:var(--subtext);
-  }
-  .fund-card input{
-    width:100%;
-    border:none;
-    background:transparent;
-    text-align:center;
-    font-family:'Cairo',sans-serif;
-    font-weight:900;
-    font-size:30px;
-    color:var(--primary);
-    margin-top:4px;
-  }
-  .fund-card input:focus{outline:none;}
-  .section-label{
-    font-size:12px;
-    font-weight:700;
-    color:var(--subtext);
-    margin:18px 20px 6px;
-  }
-  .row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:11px 14px;
-    border-bottom:1px solid var(--divider);
-    transition: background-color 0.2s ease;
-  }
-  .row.has-value {
-    background-color: var(--active-bg);
-  }
-  .row:last-child{border-bottom:none;}
-  .row .icon{
-    width:30px;
-    height:30px;
-    border-radius:50%;
-    background:#EEF0FB;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:15px;
-    flex-shrink:0;
-  }
-  .row .label{
-    flex:1;
-    font-size:14px;
-    font-weight:500;
-    min-width:0;
-    cursor: pointer;
-  }
-  .row .label input.edit-input{
-    width:100%;
-    border:none;
-    background:transparent;
-    font-family:'Tajawal',sans-serif;
-    font-size:14px;
-    font-weight:500;
-    color:var(--text);
-    border-bottom:1px solid var(--primary);
-    padding:2px 0;
-  }
-  .edit-btn{
-    background:none;
-    border:none;
-    color:#b0b0b8;
-    font-size:13px;
-    cursor:pointer;
-    padding:4px;
-    flex-shrink:0;
-    border-radius: 4px;
-  }
-  .edit-btn:hover{color:var(--primary); background: #eee;}
-  .item-detail{
-    max-height:0;
-    overflow:hidden;
-    transition:max-height .25s ease;
-    background:#FAFAFB;
-  }
-  .item-detail.open{max-height:600px;}
-  .item-detail-inner{
-    padding:8px 14px 12px;
-    border-bottom:1px solid var(--divider);
-  }
-  .item-sub-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:6px 0;
-  }
-  .item-sub-row .sub-name{
-    flex:1;
-    min-width:0;
-    border:none;
-    background:transparent;
-    font-family:'Tajawal',sans-serif;
-    font-size:13px;
-    color:var(--text);
-    border-bottom:1px dashed var(--divider);
-    padding:2px 0;
-  }
-  .item-sub-row .sub-amount{
-    width:76px;
-    text-align:center;
-    font-family:'Cairo',sans-serif;
-    font-weight:700;
-    font-size:13px;
-    color:var(--primary-dark);
-    background:#F5F6FA;
-    border:1px solid var(--divider);
-    border-radius:8px;
-    padding:5px 4px;
-  }
-  .item-sub-row .sub-remove{
-    background:none;
-    border:none;
-    color:#b0b0b8;
-    font-size:15px;
-    cursor:pointer;
-    padding:0 2px;
-    flex-shrink:0;
-  }
-  .item-add-sub{
-    background:none;
-    border:none;
-    color:var(--primary);
-    font-family:'Tajawal',sans-serif;
-    font-weight:700;
-    font-size:12.5px;
-    cursor:pointer;
-    padding:6px 0 0;
-  }
-  .row input.amount{
-    width:80px;
-    text-align:center;
-    font-family:'Cairo',sans-serif;
-    font-weight:700;
-    font-size:14.5px;
-    color:var(--primary-dark);
-    background:#F5F6FA;
-    border:1px solid var(--divider);
-    border-radius:8px;
-    padding:7px 4px;
-  }
-  .row input.amount:focus{
-    outline:2px solid var(--primary);
-    outline-offset:1px;
-  }
-  .total-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:14px 16px;
-  }
-  .total-row .t-label{
-    font-size:14px;
-    font-weight:700;
-  }
-  .total-row .t-value{
-    font-family:'Cairo',sans-serif;
-    font-weight:900;
-    font-size:16px;
-    color:var(--amber);
-  }
-  .remain-card{
-    margin:16px 14px 0;
-    border-radius:14px;
-    padding:16px;
-    text-align:center;
-    color:#fff;
-    background:var(--green);
-    transition:background .2s;
-    box-shadow:0 3px 10px rgba(0,0,0,0.15);
-  }
-  .remain-card.negative{background:var(--red);}
-  .remain-card .label{
-    font-size:12.5px;
-    opacity:.9;
-  }
-  .remain-card .value{
-    font-family:'Cairo',sans-serif;
-    font-weight:900;
-    font-size:28px;
-    margin-top:4px;
-  }
-  .reset-btn{
-    display:block;
-    width:calc(100% - 28px);
-    margin:16px 14px 0;
-    padding:12px;
-    background:transparent;
-    border:1.5px solid var(--primary);
-    color:var(--primary);
-    font-family:'Tajawal',sans-serif;
-    font-weight:700;
-    font-size:13.5px;
-    border-radius:10px;
-    cursor:pointer;
-    transition: all 0.2s;
-  }
-  .reset-btn:active{background:#EEF0FB;}
-  .saved-row{
-    padding:11px 14px;
-    border-bottom:1px solid var(--divider);
-    font-size:13px;
-    cursor:pointer;
-  }
-  .saved-row:last-child{border-bottom:none;}
-  .saved-row .s-top{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .saved-row .s-date{color:var(--subtext);font-size:11.5px;}
-  .saved-row .s-values{font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;}
-  .saved-row .s-values .rem-pos{color:var(--green);}
-  .saved-row .s-values .rem-neg{color:var(--red);}
-  .saved-row .s-del{background:none;border:none;color:#b0b0b8;font-size:15px;cursor:pointer;padding:2px 6px;}
-  .saved-row .s-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;}
-  .saved-row .s-pdf, .saved-row .s-wa{background:none;border:none;font-size:15px;cursor:pointer;padding:2px 6px;}
-  .saved-row .s-pdf{color:#b0b0b8;}
-  .saved-row .s-pdf:hover{color:var(--primary);}
-  .saved-row .s-wa{color:#25D366;}
-  .action-row{display:flex;gap:8px;margin:10px 14px 0;}
-  .action-row .reset-btn{margin:0;flex:1;}
-  .btn-wa{background:#25D366;border-color:#25D366;color:#fff;}
-  .btn-busy{opacity:.6;pointer-events:none;}
-  .saved-row .s-detail{
-    max-height:0;
-    overflow:hidden;
-    transition:max-height .25s ease;
-  }
-  .saved-row.open .s-detail{
-    max-height:400px;
-    margin-top:10px;
-  }
-  .saved-row .s-detail-row{
-    display:flex;
-    justify-content:space-between;
-    padding:5px 4px;
-    font-size:12.5px;
-    color:var(--text);
-    border-top:1px dashed var(--divider);
-  }
-  .saved-row .s-detail-row span:last-child{
-    font-family:'Cairo',sans-serif;
-    font-weight:700;
-    color:var(--primary-dark);
-  }
-  .empty-hint{
-    text-align:center;
-    color:var(--subtext);
-    font-size:12.5px;
-    padding:18px;
-  }
-  footer.note{
-    text-align:center;
-    font-size:10.5px;
-    color:var(--subtext);
-    padding:14px 20px 0;
-  }
+  
+  * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--text); display: flex; justify-content: center; }
+  
+  .app-container { width: 100%; max-width: 480px; min-height: 100vh; background: var(--bg); padding-bottom: 70px; position: relative; }
+  
+  /* الهيدر */
+  .header { background: var(--primary); color: white; padding: 20px; text-align: center; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .header h1 { margin: 0; font-family: 'Cairo', sans-serif; font-size: 24px; font-weight: 900; letter-spacing: 1px; }
+  .header p { margin: 6px 0 0; font-size: 13px; opacity: 0.8; }
+  
+  /* التبديل بين الواجهات */
+  .view-switcher { display: flex; background: #e5e7eb; margin: 15px; border-radius: 12px; padding: 4px; }
+  .view-btn { flex: 1; padding: 10px; border: none; background: transparent; font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 10px; transition: all 0.2s; color: var(--text-muted); }
+  .view-btn.active { background: var(--card); color: var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  
+  /* الصفحات */
+  .page { display: none; padding: 0 15px; }
+  .page.active { display: block; }
+  
+  /* الكروت */
+  .card { background: var(--card); padding: 16px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  
+  /* القائمة المنسدلة للحاسبة المطورة بنظام FLYINGSTAR */
+  .accordion-toggle { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 14px; border-radius: 16px; font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .accordion-content { display: none; background: #F2F2F5; padding: 14px; border: 1px solid #bfdbfe; border-top: none; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; margin-top: -20px; margin-bottom: 16px; }
+  .accordion-content.open { display: block; }
+
+  /* نظام الأسطر والبنود المقتبس من FlyingStar */
+  .fs-fund-section { background: var(--card); padding: 14px; border-radius: 12px; text-align: center; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .fs-fund-section .fs-label { font-size: 12px; color: var(--text-muted); font-weight: 700; }
+  .fs-fund-section input { width: 100%; border: none; background: transparent; text-align: center; font-family: 'Cairo', sans-serif; font-weight: 900; font-size: 26px; color: var(--fs-primary); margin-top: 4px; }
+  .fs-fund-section input:focus { outline: none; }
+
+  .fs-section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin: 10px 6px 6px; }
+  
+  .fs-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--fs-divider); background: var(--card); transition: background-color 0.2s ease; }
+  .fs-row.has-value { background-color: var(--fs-active-bg); }
+  .fs-row:first-child { border-top-left-radius: 12px; border-top-right-radius: 12px; }
+  .fs-row:last-child { border-bottom: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+  
+  .fs-row .fs-icon { width: 28px; height: 28px; border-radius: 50%; background: #EEF0FB; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .fs-row .fs-label-text { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--text); }
+  
+  .fs-edit-btn { background: none; border: none; color: #b0b0b8; font-size: 13px; cursor: pointer; padding: 4px; flex-shrink: 0; border-radius: 4px; }
+  .fs-edit-btn:hover { color: var(--fs-primary); background: #eee; }
+  
+  /* تفاصيل البنود الفرعية المتقدمة */
+  .fs-item-detail { max-height: 0; overflow: hidden; transition: max-height .25s ease; background: #FAFAFB; border-left: 2px solid var(--fs-primary); }
+  .fs-item-detail.fs-open { max-height: 400px; }
+  .fs-item-detail-inner { padding: 6px 12px 10px; border-bottom: 1px solid var(--fs-divider); }
+  
+  .fs-sub-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .fs-sub-row .fs-sub-name { flex: 1; border: none; background: transparent; font-size: 12.5px; color: var(--text); border-bottom: 1px dashed var(--fs-divider); padding: 2px 0; }
+  .fs-sub-row .fs-sub-name:focus { outline: none; border-bottom-color: var(--fs-primary); }
+  .fs-sub-row .fs-sub-amount { width: 70px; text-align: center; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--fs-primary-dark); background: #F5F6FA; border: 1px solid var(--fs-divider); border-radius: 6px; padding: 4px; }
+  .fs-sub-row .fs-sub-remove { background: none; border: none; color: #b0b0b8; font-size: 14px; cursor: pointer; padding: 0 2px; }
+  
+  .fs-add-sub-btn { background: none; border: none; color: var(--fs-primary); font-weight: 700; font-size: 12px; cursor: pointer; padding: 4px 0 0; display: block; }
+  
+  .fs-row input.fs-amount { width: 80px; text-align: center; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 14px; color: var(--fs-primary-dark); background: #F5F6FA; border: 1px solid var(--fs-divider); border-radius: 8px; padding: 6px 4px; }
+  .fs-row input.fs-amount:focus { outline: 2px solid var(--fs-primary); }
+  
+  /* مجاميع وحسابات النظام الجديد */
+  .fs-total-card { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .fs-total-card span:first-child { font-size: 13.5px; font-weight: 700; }
+  .fs-total-card span:last-child { font-family: 'Cairo', sans-serif; font-weight: 900; font-size: 15.5px; color: var(--warning); }
+  
+  .fs-remain-card { margin-top: 12px; border-radius: 12px; padding: 14px; text-align: center; color: #fff; background: var(--fs-green); box-shadow: 0 3px 8px rgba(0,0,0,0.1); transition: background .2s; }
+  .fs-remain-card.fs-negative { background: var(--fs-red); }
+  .fs-remain-card .fs-rem-label { font-size: 12px; opacity: .9; font-weight: 600; }
+  .fs-remain-card .fs-rem-value { font-family: 'Cairo', sans-serif; font-weight: 900; font-size: 24px; margin-top: 2px; }
+
+  /* عناصر الإدخال لبقية الكروت */
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--text-muted); }
+  .form-group input, .form-group select { width: 100%; padding: 11px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; background: #f9fafb; }
+  .form-group input:focus, .form-group select:focus { outline: 2px solid var(--accent); background: #fff; }
+  
+  /* رفع الملفات (e-POD) */
+  .pod-upload-btn { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; margin-bottom: 12px; }
+  .pod-preview { max-width: 100%; max-height: 120px; border-radius: 8px; margin-top: 10px; display: none; object-fit: contain; border: 1px solid #e2e8f0; }
+
+  /* الأزرار */
+  .btn { display: block; width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; text-align: center; transition: background 0.2s; }
+  .btn:hover { background: var(--accent-dark); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); margin-top: 10px; }
+  
+  /* قائمة الرحلات */
+  .trip-item { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin-bottom: 12px; background: #fff; }
+  .trip-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 700; }
+  .trip-body { font-size: 12px; color: var(--text-muted); margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .status-pending { background: #fef3c7; color: #d97706; }
+  .status-loading { background: #e0f2fe; color: #0284c7; }
+  .status-transit { background: #e0e7ff; color: #4f46e5; }
+  .status-done { background: #dcfce7; color: #16a34a; }
+  
+  /* محاكاة الخريطة */
+  .map-box { background: #e5e7eb; height: 140px; border-radius: 12px; margin-top: 10px; margin-bottom: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--text-muted); font-size: 12px; position: relative; overflow: hidden; border: 1px dashed #9ca3af; }
+  .map-route { width: 80%; height: 4px; background: #9ca3af; position: relative; border-radius: 2px; }
+  .map-progress { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); width: 0%; transition: width 0.5s; }
+  .map-truck { position: absolute; font-size: 18px; top: -10px; left: 0%; transform: translateX(-50%); transition: left 0.5s; }
+  
+  /* شريط التنقل السفلي */
+  .nav-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--primary); display: flex; justify-content: space-around; padding: 10px 0; border-top-left-radius: 16px; border-top-right-radius: 16px; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); }
+  .nav-item { color: #9ca3af; text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; cursor: pointer; background: none; border: none; }
+  .nav-item.active { color: #fff; }
+  .nav-icon { font-size: 20px; margin-bottom: 2px; }
 </style>
 </head>
 <body>
-<div class="phone">
 
-  <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" style="display:none;">
+<div class="app-container">
+  <!-- هيدر المنصة -->
+  <div class="header">
+    <h1>TRELLA CLONE</h1>
+    <p>منصة الربط اللوجستي وإدارة الأساطيل الذكية</p>
+  </div>
 
-  <div id="ocrPickOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:50;align-items:flex-end;justify-content:center;">
-    <div style="background:#fff;width:100%;max-width:420px;border-radius:16px 16px 0 0;padding:16px;max-height:80vh;overflow-y:auto;">
-      <div style="font-family:'Cairo',sans-serif;font-weight:900;font-size:15px;margin-bottom:4px;">اختر المبلغ الصح</div>
-      <div style="font-size:12px;color:var(--subtext);margin-bottom:12px;">دي الأرقام اللي لقيناها في الصورة، دوس على الرقم الصح</div>
-      <div id="ocrCandidatesList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
-      <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--divider);padding-top:12px;">
-        <input type="text" inputmode="decimal" id="ocrManualInput" placeholder="أو اكتب المبلغ يدويًا" style="flex:1;border:1px solid var(--divider);border-radius:8px;padding:9px 10px;font-family:'Cairo',sans-serif;font-size:14px;text-align:center;">
-        <button id="ocrManualConfirm" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:13px;">تأكيد</button>
+  <!-- مبدل الواجهات السريع -->
+  <div class="view-switcher">
+    <button class="view-btn active" onclick="switchRole('shipper')">🏢 بوابة الشاحن</button>
+    <button class="view-btn" onclick="switchRole('driver')">🧑‍✈️ تطبيق السائق</button>
+  </div>
+
+  <!-- ================= بوابة الشاحن ================= -->
+  <div id="shipperPage" class="page active">
+    
+    <!-- الحاسبة المتطورة كلياً بنظام تشغيل FlyingStar الذكي -->
+    <div class="accordion-toggle" onclick="toggleCalculator()">
+      <span>🧮 حاسبة عهدة ومصاريف النقلة المتطورة</span>
+      <span id="accordionArrow">▼</span>
+    </div>
+    
+    <div id="calculatorContent" class="accordion-content">
+      <!-- كارت إدخال العهدة الرئيسي -->
+      <div class="fs-fund-section">
+        <div class="fs-label">العهدة المستلمة للسائق (ج.م)</div>
+        <input type="text" inputmode="decimal" id="fsFunded" placeholder="0" oninput="validateAndCalc(this)">
       </div>
-      <button id="ocrCancelPick" style="width:100%;background:none;border:none;color:var(--subtext);padding:12px 0 2px;font-size:13px;">إلغاء</button>
+
+      <div class="fs-section-label">بنود مصاريف الطريق التفصيلية</div>
+      <!-- حاوية البنود الديناميكية المحملة بنظام المجموعات الفرعية -->
+      <div id="fsItemsContainer"></div>
+
+      <!-- كروت النتائج الحية والمؤشرات المالية للمتبقي والربحية -->
+      <div class="fs-total-card">
+        <span>إجمالي المصروف الحالي</span>
+        <span id="fsTotalValue">0 ج.م</span>
+      </div>
+
+      <div class="fs-remain-card" id="fsRemainCard">
+        <div class="fs-rem-label">المتبقي من العهدة مع السائق</div>
+        <div class="fs-rem-value" id="fsRemainValue">0 ج.م</div>
+      </div>
+      
+      <!-- أزرار الإجراءات الخاصة بالحاسبة: تصفير وتصدير CSV -->
+      <div style="display: flex; gap: 10px; margin-top: 12px;">
+        <button class="btn btn-outline" style="flex: 1; margin-top: 0; background: #fff; font-size: 13px; padding: 10px;" onclick="resetFsCalculator()">تصفير الحاسبة</button>
+        <button class="btn" style="flex: 1; font-size: 13px; padding: 10px; background: var(--fs-primary);" onclick="exportExpensesToCSV()">تصدير كشف CSV</button>
+      </div>
+    </div>
+
+    <!-- نافذة طلب نقلة جديدة -->
+    <div class="card">
+      <h3 class="card-title">📦 طلب نقلة شحنة جديدة</h3>
+      <div class="form-group">
+        <label>مكان التحميل (البداية)</label>
+        <input type="text" id="loadLoc" placeholder="مثال: ميناء الإسكندرية - رصيف 5">
+      </div>
+      <div class="form-group">
+        <label>مكان التنزيل (الوصول)</label>
+        <input type="text" id="unloadLoc" placeholder="مثال: مخازن العبور - المنطقة الصناعية">
+      </div>
+      <div class="form-group">
+        <label>نوع مقطورة الشاحنة</label>
+        <select id="tType">
+          <option value="تريلا مسطح">تريلا مسطح (Flatbed)</option>
+          <option value="جرار حاويات">جرار حاويات (Container)</option>
+          <option value="جامبو مغلق">جامبو 7 طن (Jumbo)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>وزن الشحنة بالكامل (طن)</label>
+        <input type="number" id="tWeight" placeholder="أدخل الوزن">
+      </div>
+      <div class="form-group">
+        <label>قيمة السعر المقترح للرحلة (ج.م)</label>
+        <input type="number" id="tPrice" placeholder="مثال: 4500">
+      </div>
+      <button class="btn" onclick="createTripOrder()">نشر الطلب في سوق تريلا</button>
+    </div>
+    
+    <div class="card">
+      <h3 class="card-title">📊 حالة الشحنات والطلبات الحالية</h3>
+      <div id="shipperTripsContainer"></div>
     </div>
   </div>
 
-  <div class="appbar" style="position:relative;">
-    <h1>🚛 FLYINGSTAR</h1>
-    <div class="sub">حساب عهدة الشاحنة ومصاريفها</div>
-    <div class="status-pill" id="statusPill">تم الحفظ ✓</div>
-  </div>
-
-  <div class="card" id="tripInfoCard">
-    <label class="row">
-      <span class="icon">🏷️</span>
-      <span class="label"><input type="text" id="tripName" class="edit-input" style="border-bottom:none;" placeholder="اسم الرحلة (مثال: نقلة القاهرة - الإسكندرية)"></span>
-    </label>
-    <label class="row">
-      <span class="icon">🧑‍✈️</span>
-      <span class="label"><input type="text" id="driverName" class="edit-input" style="border-bottom:none;" placeholder="اسم السائق"></span>
-    </label>
-    <label class="row">
-      <span class="icon">📅</span>
-      <span class="label"><input type="date" id="tripDate" class="edit-input" style="border-bottom:none;"></span>
-    </label>
-    <label class="row">
-      <span class="icon">⚖️</span>
-      <span class="label"><input type="text" inputmode="decimal" id="cargoWeight" class="edit-input" style="border-bottom:none;" placeholder="وزن الحمولة (طن)"></span>
-    </label>
-  </div>
-
-  <div class="card fund-card">
-    <div class="label">العهدة المستلمة</div>
-    <input type="text" inputmode="decimal" id="funded" placeholder="0">
-    <button class="item-add-sub" id="fundToggle" title="زيادة العهدة" style="margin-top:6px;">🧾 زيادة العهدة</button>
-  </div>
-  <div class="item-detail" id="fundDetail" style="margin:0 14px;border-radius:0 0 14px 14px;">
-    <div class="item-detail-inner" id="fundDetailInner"></div>
-  </div>
-
-  <div class="section-label">بنود المصاريف</div>
-  <div class="card" id="items"></div>
-
-  <button class="reset-btn" id="addItem" style="margin-top:10px;">+ إضافة بند جديد</button>
-
-  <div class="card">
-    <div class="total-row">
-      <span class="t-label">إجمالي المصروف</span>
-      <span class="t-value" id="total">0 ج.م</span>
+  <!-- ================= تطبيق السائق ================= -->
+  <div id="driverPage" class="page">
+    <div class="card">
+      <h3 class="card-title">💼 النقلة النشطة حالياً</h3>
+      <div id="activeDriverTrip"></div>
+    </div>
+    
+    <div class="card">
+      <h3 class="card-title">🛒 سوق تريلا المفتوح (طلبات الشحن المتاحة)</h3>
+      <div id="marketTripsContainer"></div>
     </div>
   </div>
 
-  <div class="remain-card" id="remainCard">
-    <div class="label">المتبقي من العهدة</div>
-    <div class="value" id="remain">0 ج.م</div>
+  <!-- شريط التنقل السفلي -->
+  <div class="nav-bar">
+    <button class="nav-item active" onclick="alert('لوحة التحكم الرئيسية نشطة')">
+      <span class="nav-icon">📊</span>الرئيسية
+    </button>
+    <button class="nav-item" onclick="alert('تتبع الأسطول المباشر يتطلب ترخيص GPS')">
+      <span class="nav-icon">🗺️</span>التتبع الحي
+    </button>
+    <button class="nav-item" onclick="alert('المحفظة والفواتير الإلكترونية')">
+      <span class="nav-icon">💳</span>المحفظة
+    </button>
   </div>
-
-  <button class="reset-btn" id="saveTrip" style="background:var(--green);border-color:var(--green);color:#fff;">💾 حفظ الرحلة</button>
-
-  <div class="action-row">
-    <button class="reset-btn" id="pdfCurrent">📄 حفظ PDF</button>
-    <button class="reset-btn btn-wa" id="waCurrent">📱 إرسال واتساب</button>
-  </div>
-
-  <button class="reset-btn" id="resetAll">تصفير الرحلة الحالية</button>
-
-  <a href="reports.html" style="display:flex;align-items:center;justify-content:space-between;margin:16px 14px 0;background:var(--card);border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-decoration:none;color:var(--text);">
-    <span style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;">📊 صفحة التقارير الكاملة</span>
-    <span style="color:var(--subtext);font-size:16px;">‹</span>
-  </a>
-
-  <div class="section-label" id="savedLabel" style="display:none;">الرحلات المحفوظة (دوس على أي رحلة لعرض التفاصيل)</div>
-  <div class="card" id="savedList" style="display:none;"></div>
-
-  <footer class="note" id="footerNote">الأرقام بتتحدث أوتوماتيك أول ما تكتب أي مبلغ · بياناتك بتتحفظ تلقائي على جهازك</footer>
 </div>
 
 <script>
-const items = [
-  {icon:"🛒", label:"ماركت"},
-  {icon:"💳", label:"كرت"},
-  {icon:"🚫", label:"مخالفات"},
-  {icon:"📋", label:"إثبات"},
-  {icon:"🧯", label:"غفرة"},
-  {icon:"📦", label:"حمولة"},
-  {icon:"⛽", label:"جاز 1"},
-  {icon:"⛽", label:"جاز 2"},
-  {icon:"🔧", label:"تعتيق"},
-  {icon:"🛍️", label:"سواق"},
-  {icon:"➕", label:"تباع"},
-  {icon:"🧰", label:"فلاتر"},
-  {icon:"🧊", label:"ثلج"},
-  {icon:"🛢️", label:"رش وتشحيم"},
-  {icon:"🛠️", label:"غيار زيت"},
-  {icon:"🔩", label:"لحام جنوط"},
-  {icon:"🛞", label:"كاوتش"},
+// البنود الافتراضية المستوحاة والمطابقة لنظام FlyingStar الذكي
+const fsDefaultItems = [
+  { icon: "⛽", label: "السولار والوقود" },
+  { icon: "💳", label: "الكارتة والموازين" },
+  { icon: "🧯", label: "إكراميات وغفرة" },
+  { icon: "🔧", label: "تنزيل وتعتيق الشحنة" },
+  { icon: "🛍️", label: "بدل ومصاريف السائق" },
+  { icon: "🛞", label: "إصلاح كاوتش وإطارات" },
+  { icon: "🛠️", label: "صيانة وأعطال طارئة" }
 ];
 
-const itemsEl = document.getElementById('items');
-const fundedEl = document.getElementById('funded');
-const tripNameEl = document.getElementById('tripName');
-const driverNameEl = document.getElementById('driverName');
-const tripDateEl = document.getElementById('tripDate');
-const cargoWeightEl = document.getElementById('cargoWeight');
-const totalEl = document.getElementById('total');
-const remainEl = document.getElementById('remain');
-const remainCard = document.getElementById('remainCard');
-const statusPill = document.getElementById('statusPill');
-const ocrCameraInput = document.getElementById('ocrCameraInput');
-let activeAmountInputForOcr = null; // يحفظ الحقل المراد تعبئته بعد التصوير
+// دالة بناء وتوليد عناصر الحاسبة ديناميكياً عند تحميل الصفحة
+function initFsCalculator() {
+  const container = document.getElementById('fsItemsContainer');
+  container.innerHTML = '';
 
-const DRAFT_KEY = 'draft:current-trip';
-let draftSaveTimer = null;
-
-const usingLocalFallback = !window.storage;
-const store = {
-  async get(key){
-    if(window.storage) return await window.storage.get(key, false);
-    const raw = localStorage.getItem(key);
-    if(raw === null) throw new Error('not found');
-    return { key, value: raw, shared:false };
-  },
-  async set(key, value){
-    if(window.storage) return await window.storage.set(key, value, false);
-    localStorage.setItem(key, value);
-    return { key, value, shared:false };
-  },
-  async delete(key){
-    if(window.storage) return await window.storage.delete(key, false);
-    localStorage.removeItem(key);
-    return { key, deleted:true, shared:false };
-  },
-  async list(prefix){
-    if(window.storage) return await window.storage.list(prefix, false);
-    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
-    return { keys, prefix, shared:false };
-  }
-};
-
-function money(n){
-  return n.toLocaleString('en-US') + " ج.م";
-}
-
-function showSavedPill(){
-  statusPill.classList.add('show');
-  clearTimeout(showSavedPill._t);
-  showSavedPill._t = setTimeout(()=> statusPill.classList.remove('show'), 1200);
-}
-
-function validateNumberInput(input) {
-  input.value = input.value.replace(/[^0-9.]/g, '');
-  if ((input.value.match(/\./g) || []).length > 1) {
-    input.value = input.value.replace(/\.+$/, "");
-  }
-}
-
-// دالة تشغيل الكاميرا وتحليل الصورة لقراءة المبلغ
-function triggerOcrForInput(amountInput) {
-  activeAmountInputForOcr = amountInput;
-  ocrCameraInput.click();
-}
-
-// تحويل الأرقام العربية/الهندية إلى أرقام إنجليزية عادية
-function normalizeDigits(str){
-  const easternArabic = '٠١٢٣٤٥٦٧٨٩';
-  const persian = '۰۱۲۳۴۵۶۷۸۹';
-  return str.replace(/[٠-٩۰-۹]/g, d=>{
-    let idx = easternArabic.indexOf(d);
-    if(idx === -1) idx = persian.indexOf(d);
-    return idx === -1 ? d : idx;
-  });
-}
-
-// تصغير الصورة قبل تحليلها لتسريع المسح وتحسين الدقة على صور الكاميرا الكبيرة
-function downscaleImage(file, maxDim = 1600){
-  return new Promise((resolve)=>{
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      let { width, height } = img;
-      if (width > maxDim || height > maxDim) {
-        const scale = maxDim / Math.max(width, height);
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      URL.revokeObjectURL(url);
-      canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.92);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
-  });
-}
-
-// استخراج كل الأرقام المرشحة (مش رقم واحد بس) عشان المستخدم يختار الصح
-function extractCandidateAmounts(rawText){
-  const text = normalizeDigits(rawText);
-  // نلتقط أرقام قد تحتوي على فواصل آلاف (1,250) ونقاط عشرية (1250.50)
-  const matches = text.match(/\d{1,3}(?:[,.\s]\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?/g);
-  if (!matches || matches.length === 0) return [];
-
-  const seen = new Set();
-  const candidates = [];
-  matches.forEach(m => {
-    const cleaned = m.replace(/,/g, '').replace(/\s/g, '');
-    const num = parseFloat(cleaned);
-    if (isNaN(num) || num <= 0) return;
-    const key = num.toString();
-    if (seen.has(key)) return;
-    seen.add(key);
-    candidates.push(num);
-  });
-
-  // ترتيب: الأرقام المعقولة (أقل من مليون) الأكبر أولاً، ثم الباقي
-  const plausible = candidates.filter(n => n < 1000000).sort((a,b)=>b-a);
-  const rest = candidates.filter(n => n >= 1000000).sort((a,b)=>b-a);
-  return [...plausible, ...rest].slice(0, 12);
-}
-
-const ocrPickOverlay = document.getElementById('ocrPickOverlay');
-const ocrCandidatesList = document.getElementById('ocrCandidatesList');
-const ocrManualInput = document.getElementById('ocrManualInput');
-const ocrManualConfirm = document.getElementById('ocrManualConfirm');
-const ocrCancelPick = document.getElementById('ocrCancelPick');
-
-function closeOcrPicker(){
-  ocrPickOverlay.style.display = 'none';
-  ocrManualInput.value = '';
-  activeAmountInputForOcr = null;
-}
-
-function openOcrPicker(candidates){
-  ocrCandidatesList.innerHTML = '';
-  if (candidates.length === 0){
-    ocrCandidatesList.innerHTML = '<div style="font-size:13px;color:var(--subtext);">لم يتم العثور على أرقام، اكتب المبلغ يدويًا تحت 👇</div>';
-  } else {
-    candidates.forEach(n => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.textContent = n.toLocaleString('en-US');
-      chip.style.cssText = 'background:#F0F2FA;border:1px solid var(--divider);color:var(--primary-dark);font-family:Cairo,sans-serif;font-weight:700;font-size:14px;border-radius:8px;padding:8px 14px;cursor:pointer;';
-      chip.addEventListener('click', () => {
-        if (activeAmountInputForOcr){
-          activeAmountInputForOcr.value = n;
-          calc();
-          scheduleDraftSave();
-        }
-        closeOcrPicker();
-      });
-      ocrCandidatesList.appendChild(chip);
-    });
-  }
-  ocrPickOverlay.style.display = 'flex';
-  ocrManualInput.focus();
-}
-
-ocrManualConfirm.addEventListener('click', () => {
-  validateNumberInput(ocrManualInput);
-  const val = parseFloat(ocrManualInput.value);
-  if (!isNaN(val) && activeAmountInputForOcr){
-    activeAmountInputForOcr.value = val;
-    calc();
-    scheduleDraftSave();
-  }
-  closeOcrPicker();
-});
-ocrManualInput.addEventListener('input', () => validateNumberInput(ocrManualInput));
-ocrManualInput.addEventListener('keydown', e => { if (e.key === 'Enter') ocrManualConfirm.click(); });
-ocrCancelPick.addEventListener('click', closeOcrPicker);
-
-ocrCameraInput.addEventListener('change', async (e) => {
-  if (!e.target.files || e.target.files.length === 0 || !activeAmountInputForOcr) return;
-  
-  const file = e.target.files[0];
-  const originalPlaceholder = activeAmountInputForOcr.placeholder;
-  activeAmountInputForOcr.value = '';
-  activeAmountInputForOcr.disabled = true;
-  activeAmountInputForOcr.placeholder = 'جاري المسح...';
-  
-  try {
-    const processedImage = await downscaleImage(file);
-    // البدء في معالجة الصورة عبر Tesseract
-    const result = await Tesseract.recognize(processedImage, 'eng');
-    const text = result.data.text;
-
-    const candidates = extractCandidateAmounts(text);
-    activeAmountInputForOcr.placeholder = originalPlaceholder;
-    activeAmountInputForOcr.disabled = false;
-    openOcrPicker(candidates);
-  } catch (error) {
-    console.error(error);
-    alert('حدث خطأ أثناء معالجة الصورة، يرجى المحاولة مرة أخرى.');
-    activeAmountInputForOcr.placeholder = originalPlaceholder;
-    activeAmountInputForOcr.disabled = false;
-  } finally {
-    ocrCameraInput.value = ''; // تصفير الحقل لتفعيل الاختيار القادم
-  }
-});
-
-function calc(){
-  let sum = 0;
-  document.querySelectorAll('.amount').forEach(inp=>{
-    const v = parseFloat(inp.value);
-    if(!isNaN(v)) {
-      sum += v;
-      inp.closest('.row').classList.add('has-value');
-    } else {
-      inp.closest('.row').classList.remove('has-value');
-    }
-  });
-  totalEl.textContent = money(sum);
-
-  const funded = parseFloat(fundedEl.value) || 0;
-  const remain = funded - sum;
-  remainEl.textContent = money(remain);
-  remainCard.classList.toggle('negative', remain < 0);
-
-  scheduleDraftSave();
-}
-
-function scheduleDraftSave(){
-  clearTimeout(draftSaveTimer);
-  draftSaveTimer = setTimeout(saveDraft, 1000);
-}
-
-const fundToggleBtn = document.getElementById('fundToggle');
-const fundDetailEl = document.getElementById('fundDetail');
-const fundDetailInnerEl = document.getElementById('fundDetailInner');
-let fundExtras = [];
-
-function recalcFunded(){
-  const sum = fundExtras.reduce((s,it)=> s + (parseFloat(it.amount)||0), 0);
-  if(fundExtras.length > 0){
-    fundedEl.value = sum || '';
-    fundedEl.readOnly = true;
-    fundedEl.style.background = '#F0F1FA';
-  }else{
-    fundedEl.readOnly = false;
-    fundedEl.style.background = '';
-  }
-  calc();
-}
-
-function renderFundExtraRows(){
-  fundDetailInnerEl.innerHTML = '';
-  fundExtras.forEach((it, idx)=>{
-    const r = document.createElement('div');
-    r.className = 'item-sub-row';
-    r.innerHTML = `
-      <input type="text" class="sub-name" placeholder="تفاصيل (اختياري)" value="${(it.name||'').replace(/"/g,'&quot;')}">
-      <input type="text" inputmode="decimal" class="sub-amount" placeholder="0" value="${it.amount||''}">
-      <button class="sub-remove" title="حذف">✕</button>
-    `;
-    r.querySelector('.sub-name').addEventListener('input', e=>{
-      fundExtras[idx].name = e.target.value;
-      scheduleDraftSave();
-    });
-    r.querySelector('.sub-amount').addEventListener('input', e=>{
-      validateNumberInput(e.target);
-      fundExtras[idx].amount = e.target.value;
-      recalcFunded();
-      scheduleDraftSave();
-    });
-    r.querySelector('.sub-remove').addEventListener('click', ()=>{
-      fundExtras.splice(idx,1);
-      renderFundExtraRows();
-      recalcFunded();
-      scheduleDraftSave();
-    });
-    fundDetailInnerEl.appendChild(r);
-  });
-  const addBtn = document.createElement('button');
-  addBtn.className = 'item-add-sub';
-  addBtn.textContent = '+ إضافة زيادة عهدة';
-  addBtn.addEventListener('click', ()=>{
-    fundExtras.push({name:'', amount:''});
-    renderFundExtraRows();
-    fundDetailEl.classList.add('open');
-    scheduleDraftSave();
-  });
-  fundDetailInnerEl.appendChild(addBtn);
-}
-
-function setFundExtras(arr){
-  fundExtras = (arr || []).map(it=>({name: it.name || '', amount: it.amount != null ? it.amount : ''}));
-  renderFundExtraRows();
-  recalcFunded();
-}
-
-fundToggleBtn.addEventListener('click', ()=>{
-  fundDetailEl.classList.toggle('open');
-});
-
-renderFundExtraRows();
-
-function collectDraft(){
-  const rows = [];
-  itemsEl.querySelectorAll('.row').forEach(row=>{
-    const isCustom = row.classList.contains('custom-row');
-    const nameEl = row.querySelector('.custom-name') || row.querySelector('.label-text');
-    const name = nameEl ? (isCustom ? nameEl.value : nameEl.textContent) : '';
-    const amount = row.querySelector('.amount').value;
-    const icon = row.querySelector('.icon') ? row.querySelector('.icon').textContent : '✏️';
-    const entry = {name, amount, icon, custom: isCustom};
-    if(row._subItems && row._subItems.length){
-      entry.subItems = row._subItems;
-    }
-    rows.push(entry);
-  });
-  return {
-    funded: fundedEl.value,
-    fundExtras: fundExtras,
-    tripName: tripNameEl.value,
-    driverName: driverNameEl.value,
-    tripDate: tripDateEl.value,
-    cargoWeight: cargoWeightEl.value,
-    rows
-  };
-}
-
-async function saveDraft(){
-  try{
-    await store.set(DRAFT_KEY, JSON.stringify(collectDraft()));
-    showSavedPill();
-  }catch(e){
-    console.error('تعذر حفظ المسودة تلقائيًا', e);
-  }
-}
-
-async function loadDraft(){
-  try{
-    const res = await store.get(DRAFT_KEY);
-    if(!res || !res.value) return false;
-    const draft = JSON.parse(res.value);
-    fundedEl.value = draft.funded || '';
-    if(draft.fundExtras && draft.fundExtras.length){
-      setFundExtras(draft.fundExtras);
-    }
-    tripNameEl.value = draft.tripName || '';
-    driverNameEl.value = draft.driverName || '';
-    tripDateEl.value = draft.tripDate || tripDateEl.value;
-    cargoWeightEl.value = draft.cargoWeight || '';
-
-    const rows = itemsEl.querySelectorAll('.row');
-    let fixedIndex = 0;
-    (draft.rows || []).forEach(saved=>{
-      if(!saved.custom && fixedIndex < rows.length){
-        const row = rows[fixedIndex];
-        const amountInp = row.querySelector('.amount');
-        if(amountInp) amountInp.value = saved.amount || '';
-        if(saved.subItems && saved.subItems.length && row._setSubItems){
-          row._setSubItems(saved.subItems);
-        }
-        fixedIndex++;
-      }else if(saved.custom){
-        const newRow = addCustomRow(saved.name, saved.amount, saved.icon);
-        if(saved.subItems && saved.subItems.length && newRow && newRow._setSubItems){
-          newRow._setSubItems(saved.subItems);
-        }
-      }
-    });
-    return true;
-  }catch(e){
-    console.error('تعذر تحميل المسودة', e);
-    return false;
-  }
-}
-
-function addCustomRow(name='', amount='', icon='✏️'){
-  const row = document.createElement('div');
-  row.className = 'row custom-row';
-  row.innerHTML = `
-    <span class="icon">${icon}</span>
-    <span class="label"><input type="text" class="custom-name" placeholder="اسم البند" value="${name.replace(/"/g,'&quot;')}" style="width:100%;border:none;background:transparent;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:500;color:var(--text);border-bottom:1px solid var(--divider);padding:2px 0;"></span>
-    <button class="edit-btn item-camera" title="تصوير الإيصال">📷</button>
-    <button class="edit-btn item-toggle" title="تفاصيل إضافية">🧾</button>
-    <input type="text" inputmode="decimal" class="amount" placeholder="0" value="${amount}">
-    <button class="remove-btn" title="حذف البند" style="background:none;border:none;color:#b0b0b8;font-size:17px;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
-  `;
-  const amtInp = row.querySelector('.amount');
-  amtInp.addEventListener('input', (e) => {
-    validateNumberInput(e.target);
-    calc();
-  });
-  row.querySelector('.item-camera').addEventListener('click', () => triggerOcrForInput(amtInp));
-  row.querySelector('.custom-name').addEventListener('input', scheduleDraftSave);
-  setupExpandable(row);
-  row.querySelector('.remove-btn').addEventListener('click', ()=>{
-    row._detailEl.remove();
-    row.remove();
-    calc();
-  });
-  itemsEl.appendChild(row);
-  itemsEl.appendChild(row._detailEl);
-  return row;
-}
-
-document.getElementById('addItem').addEventListener('click', ()=> addCustomRow());
-fundedEl.addEventListener('input', (e) => {
-  validateNumberInput(e.target);
-  calc();
-});
-tripNameEl.addEventListener('input', scheduleDraftSave);
-driverNameEl.addEventListener('input', scheduleDraftSave);
-tripDateEl.addEventListener('input', scheduleDraftSave);
-cargoWeightEl.addEventListener('input', (e) => {
-  validateNumberInput(e.target);
-  scheduleDraftSave();
-});
-
-if(!tripDateEl.value){
-  const today = new Date();
-  const iso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  tripDateEl.value = iso;
-}
-
-document.getElementById('resetAll').addEventListener('click', ()=>{
-  if(!window.confirm('متأكد إنك عايز تصفّر الرحلة الحالية؟ البيانات دي مش رحلة محفوظة وهتتمسح.')) return;
-  fundedEl.value = '';
-  setFundExtras([]);
-  fundDetailEl.classList.remove('open');
-  tripNameEl.value = '';
-  driverNameEl.value = '';
-  cargoWeightEl.value = '';
-  const today = new Date();
-  tripDateEl.value = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  itemsEl.querySelectorAll('.row').forEach(row=>{
-    if(row._setSubItems) row._setSubItems([]);
-    if(row._detailEl) row._detailEl.classList.remove('open');
-  });
-  itemsEl.querySelectorAll('.custom-row').forEach(r=>{
-    if(r._detailEl) r._detailEl.remove();
-    r.remove();
-  });
-  document.querySelectorAll('.amount').forEach(inp => inp.value = '');
-  calc();
-});
-
-function setupExpandable(row){
-  let subItems = [];
-  const amountInput = row.querySelector('.amount');
-  const toggleBtn = row.querySelector('.item-toggle');
-
-  const detail = document.createElement('div');
-  detail.className = 'item-detail';
-  const inner = document.createElement('div');
-  inner.className = 'item-detail-inner';
-  detail.appendChild(inner);
-
-  function recalcParent(){
-    const sum = subItems.reduce((s,it)=> s + (parseFloat(it.amount)||0), 0);
-    if(subItems.length > 0){
-      amountInput.value = sum || '';
-      amountInput.readOnly = true;
-      amountInput.style.background = '#EDEDF3';
-    }else{
-      amountInput.readOnly = false;
-      amountInput.style.background = '';
-    }
-    calc();
-  }
-
-  function renderSubRows(){
-    inner.innerHTML = '';
-    subItems.forEach((it, idx)=>{
-      const r = document.createElement('div');
-      r.className = 'item-sub-row';
-      r.innerHTML = `
-        <input type="text" class="sub-name" placeholder="تفاصيل (اختياري)" value="${(it.name||'').replace(/"/g,'&quot;')}">
-        <input type="text" inputmode="decimal" class="sub-amount" placeholder="0" value="${it.amount||''}">
-        <button class="sub-remove" title="حذف">✕</button>
-      `;
-      r.querySelector('.sub-name').addEventListener('input', e=>{
-        subItems[idx].name = e.target.value;
-        scheduleDraftSave();
-      });
-      r.querySelector('.sub-amount').addEventListener('input', e=>{
-        validateNumberInput(e.target);
-        subItems[idx].amount = e.target.value;
-        recalcParent();
-        scheduleDraftSave();
-      });
-      r.querySelector('.sub-remove').addEventListener('click', ()=>{
-        subItems.splice(idx,1);
-        renderSubRows();
-        recalcParent();
-        scheduleDraftSave();
-      });
-      inner.appendChild(r);
-    });
-    const addBtn = document.createElement('button');
-    addBtn.className = 'item-add-sub';
-    addBtn.textContent = '+ إضافة تفصيل إضافي';
-    addBtn.addEventListener('click', ()=>{
-      subItems.push({name:'', amount:''});
-      renderSubRows();
-      detail.classList.add('open');
-      scheduleDraftSave();
-    });
-    inner.appendChild(addBtn);
-  }
-
-  toggleBtn.addEventListener('click', ()=>{
-    detail.classList.toggle('open');
-  });
-
-  renderSubRows();
-
-  row._subItems = subItems;
-  row._setSubItems = (arr)=>{
-    subItems = (arr || []).map(it=>({name: it.name || '', amount: it.amount != null ? it.amount : ''}));
-    row._subItems = subItems;
-    renderSubRows();
-    recalcParent();
-  };
-  row._detailEl = detail;
-}
-
-items.forEach(item=>{
-  try{
+  fsDefaultItems.forEach((item, index) => {
+    // بناء السطر الرئيسي للبند
     const row = document.createElement('div');
-    row.className = 'row';
+    row.className = 'fs-row';
+    row.id = `fs-row-${index}`;
     row.innerHTML = `
-      <span class="icon">${item.icon}</span>
-      <span class="label"><span class="label-text">${item.label}</span></span>
-      <button class="edit-btn" title="تعديل اسم البند">✏️</button>
-      <button class="edit-btn item-camera" title="تصوير الإيصال">📷</button>
-      <button class="edit-btn item-toggle" title="تفاصيل إضافية">🧾</button>
-      <input type="text" inputmode="decimal" class="amount" placeholder="0">
+      <span class="fs-icon">${item.icon}</span>
+      <span class="fs-label-text">${item.label}</span>
+      <button class="fs-edit-btn" title="تفاصيل إضافية فرعية" onclick="toggleFsSubDetail(${index})">🧾</button>
+      <input type="text" inputmode="decimal" class="fs-amount" id="fs-amount-${index}" placeholder="0" oninput="validateAndCalc(this)">
     `;
-    const amtInp = row.querySelector('.amount');
-    amtInp.addEventListener('input', (e) => {
-      validateNumberInput(e.target);
-      calc();
-    });
-    row.querySelector('.item-camera').addEventListener('click', () => triggerOcrForInput(amtInp));
-    row.querySelector('.edit-btn').addEventListener('click', ()=>{
-      const labelSpan = row.querySelector('.label');
-      const textSpan = row.querySelector('.label-text');
-      const confirmed = window.confirm(`هل تريد تعديل اسم البند "${textSpan.textContent}"؟`);
-      if(!confirmed) return;
 
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'edit-input';
-      input.value = textSpan.textContent;
-      labelSpan.innerHTML = '';
-      labelSpan.appendChild(input);
-      input.focus();
-      input.select();
+    // بناء سطر التفاصيل الفرعية المنسدلة (Sub-items) الخاص بكل بند
+    const detail = document.createElement('div');
+    detail.className = 'fs-item-detail';
+    detail.id = `fs-detail-${index}`;
+    
+    const inner = document.createElement('div');
+    inner.className = 'fs-item-detail-inner';
+    inner.id = `fs-inner-${index}`;
+    
+    detail.appendChild(inner);
+    container.appendChild(row);
+    container.appendChild(detail);
 
-      function save(){
-        const newName = input.value.trim() || textSpan.textContent;
-        labelSpan.innerHTML = `<span class="label-text">${newName}</span>`;
-        scheduleDraftSave();
-      }
-      input.addEventListener('blur', save);
-      input.addEventListener('keydown', e=>{
-        if(e.key === 'Enter') input.blur();
-      });
-    });
-    setupExpandable(row);
-    itemsEl.appendChild(row);
-    itemsEl.appendChild(row._detailEl);
-  }catch(err){
-    console.error('تعذر إضافة بند', item, err);
-  }
-});
-
-const savedListEl = document.getElementById('savedList');
-const savedLabelEl = document.getElementById('savedLabel');
-
-function formatTripDate(isoDate){
-  if(!isoDate) return new Date().toLocaleDateString('ar-EG', {dateStyle:'medium'});
-  const [y,m,d] = isoDate.split('-').map(Number);
-  const dt = new Date(y, m-1, d);
-  return dt.toLocaleDateString('ar-EG', {dateStyle:'medium'});
+    // ربط مصفوفة فرعية فارغة لكل سطر لتخزين بنوده الفرعية
+    row._subItems = [];
+    renderFsSubRows(index);
+  });
 }
 
-function collectCurrentTrip(){
-  const rows = [];
-  itemsEl.querySelectorAll('.row').forEach(row=>{
-    const nameEl = row.querySelector('.label-text') || row.querySelector('.custom-name');
-    const name = nameEl ? (nameEl.value || nameEl.textContent) : '';
-    const amount = parseFloat(row.querySelector('.amount').value) || 0;
-    if(amount !== 0 || name){
-      const entry = {name, amount};
-      if(row._subItems && row._subItems.length){
-        entry.subItems = row._subItems
-          .filter(it => (parseFloat(it.amount)||0) !== 0 || it.name)
-          .map(it => ({name: it.name || '', amount: parseFloat(it.amount) || 0}));
-      }
-      rows.push(entry);
-    }
+// دالة إظهار وإخفاء القائمة الفرعية التقريرية لكل بند
+function toggleFsSubDetail(index) {
+  const detail = document.getElementById(`fs-detail-${index}`);
+  detail.classList.toggle('fs-open');
+}
+
+// دالة إضافة وإعادة رسم الأسطر الفرعية بداخل كل بند رئيسي
+function renderFsSubRows(parentIndex) {
+  const rowEl = document.getElementById(`fs-row-${parentIndex}`);
+  const innerEl = document.getElementById(`fs-inner-${parentIndex}`);
+  const parentInput = document.getElementById(`fs-amount-${parentIndex}`);
+  const subItems = rowEl._subItems;
+
+  innerEl.innerHTML = '';
+
+  subItems.forEach((sub, subIdx) => {
+    const subRow = document.createElement('div');
+    subRow.className = 'fs-sub-row';
+    subRow.innerHTML = `
+      <input type="text" class="fs-sub-name" placeholder="تفصيل فرعي (مثال: محطة وقود معينة)" value="${sub.name}">
+      <input type="text" inputmode="decimal" class="fs-sub-amount" placeholder="0" value="${sub.amount}">
+      <button class="fs-sub-remove" onclick="removeFsSubItem(${parentIndex}, ${subIdx})">✕</button>
+    `;
+
+    // رصد وتحديث النصوص والأسماء المدخلة فرعياً
+    subRow.querySelector('.fs-sub-name').addEventListener('input', (e) => {
+      subItems[subIdx].name = e.target.value;
+    });
+
+    // رصد المبالغ المالية وتحديث خانة الإجمالي للأب
+    subRow.querySelector('.fs-sub-amount').addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+      subItems[subIdx].amount = e.target.value;
+      recalcParentFromSubs(parentIndex);
+    });
+
+    innerEl.appendChild(subRow);
   });
-  const funded = parseFloat(fundedEl.value) || 0;
-  const total = rows.reduce((s,r)=>s+r.amount, 0);
-  const fundExtrasClean = fundExtras
-    .filter(it => (parseFloat(it.amount)||0) !== 0 || it.name)
-    .map(it => ({name: it.name || '', amount: parseFloat(it.amount) || 0}));
-  return {
-    tripName: tripNameEl.value.trim(),
-    driverName: driverNameEl.value.trim(),
-    date: formatTripDate(tripDateEl.value),
-    tripDateISO: tripDateEl.value || null,
-    cargoWeight: cargoWeightEl.value.trim(),
-    savedAt: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
-    funded, fundExtras: fundExtrasClean, rows, total, remain: funded - total
+
+  // إضافة زر إضافة بند فرعي جديد أسفل القائمة
+  const addBtn = document.createElement('button');
+  addBtn.className = 'fs-add-sub-btn';
+  addBtn.textContent = '+ إضافة تفصيل فرعي إضافي';
+  addBtn.onclick = () => {
+    subItems.push({ name: '', amount: '' });
+    renderFsSubRows(parentIndex);
+    document.getElementById(`fs-detail-${parentIndex}`).classList.add('fs-open');
   };
+  innerEl.appendChild(addBtn);
 }
 
-function renderTripDetailHtml(trip){
-  let fundHtml = '';
-  if(trip.fundExtras && trip.fundExtras.length){
-    fundHtml += `<div class="s-detail-row" style="font-weight:700;"><span>العهدة</span><span>${trip.funded.toLocaleString('en-US')} ج.م</span></div>`;
-    fundHtml += trip.fundExtras.map(s=>
-      `<div class="s-detail-row" style="padding-right:16px;font-size:11.5px;color:var(--subtext);"><span>↳ ${s.name || 'بدون تفاصيل'}</span><span>${s.amount.toLocaleString('en-US')} ج.م</span></div>`
-    ).join('');
-  }
-  const nonZeroRows = trip.rows.filter(r => r.amount !== 0);
-  if(nonZeroRows.length === 0 && !fundHtml){
-    return `<div class="s-detail-row"><span>مفيش بنود مسجلة</span><span></span></div>`;
-  }
-  const rowsHtml = nonZeroRows.map(r=>{
-    let sub = '';
-    if(r.subItems && r.subItems.length){
-      sub = r.subItems.map(s=>
-        `<div class="s-detail-row" style="padding-right:16px;font-size:11.5px;color:var(--subtext);"><span>↳ ${s.name || 'بدون تفاصيل'}</span><span>${s.amount.toLocaleString('en-US')} ج.م</span></div>`
-      ).join('');
-    }
-    return `<div class="s-detail-row"><span>${r.name || 'بدون اسم'}</span><span>${r.amount.toLocaleString('en-US')} ج.م</span></div>${sub}`;
-  }).join('');
-  return fundHtml + rowsHtml;
+// دالة حذف بند فرعي واحد وتحديث الحسابات التراكمية
+function removeFsSubItem(parentIndex, subIdx) {
+  const rowEl = document.getElementById(`fs-row-${parentIndex}`);
+  rowEl._subItems.splice(subIdx, 1);
+  renderFsSubRows(parentIndex);
+  recalcParentFromSubs(parentIndex);
 }
 
-/* ====== تصدير PDF ومشاركة واتساب ====== */
-const _scriptLoadCache = {};
-function loadScriptOnce(src){
-  if(_scriptLoadCache[src]) return _scriptLoadCache[src];
-  _scriptLoadCache[src] = new Promise((resolve, reject)=>{
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('تعذر تحميل مكتبة PDF، تأكد من الاتصال بالإنترنت.'));
-    document.head.appendChild(s);
-  });
-  return _scriptLoadCache[src];
-}
-async function ensurePdfLibs(){
-  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-}
+// دالة احتساب قيم الأبناء وتجميعها أوتوماتيكياً في خانة البند الرئيسي
+function recalcParentFromSubs(parentIndex) {
+  const rowEl = document.getElementById(`fs-row-${parentIndex}`);
+  const parentInput = document.getElementById(`fs-amount-${parentIndex}`);
+  const subItems = rowEl._subItems;
 
-function escHtml(str){
-  return String(str == null ? '' : str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+  const totalSubs = subItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
-function sanitizeFilename(str){
-  return String(str || 'رحلة').replace(/[\\/:*?"<>|]/g, '-').trim().slice(0,60) || 'رحلة';
-}
-
-function buildTripFilename(trip){
-  const title = trip.saveTitle || trip.tripName || 'رحلة';
-  return `FlyingStar-${sanitizeFilename(title)}.pdf`;
-}
-
-function buildWhatsAppText(trip){
-  const lines = [];
-  lines.push('🚛 *FLYINGSTAR* - إيصال عهدة ومصاريف');
-  if(trip.saveTitle || trip.tripName) lines.push(`الرحلة: ${trip.saveTitle || trip.tripName}`);
-  if(trip.driverName) lines.push(`السائق: ${trip.driverName}`);
-  lines.push(`التاريخ: ${trip.date || ''}`);
-  if(trip.cargoWeight) lines.push(`الحمولة: ${trip.cargoWeight} طن`);
-  lines.push('');
-  lines.push(`العهدة: ${money(trip.funded || 0)}`);
-  lines.push(`إجمالي المصروف: ${money(trip.total || 0)}`);
-  lines.push(`المتبقي: ${money(trip.remain || 0)}`);
-  const nonZero = (trip.rows || []).filter(r => r.amount);
-  if(nonZero.length){
-    lines.push('');
-    lines.push('تفاصيل البنود:');
-    nonZero.forEach(r => lines.push(`- ${r.name || 'بدون اسم'}: ${money(r.amount)}`));
-  }
-  return lines.join('\n');
-}
-
-function buildReceiptElement(trip){
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;left:-9999px;top:0;width:600px;padding:32px;background:#fff;direction:rtl;font-family:Tajawal,Cairo,sans-serif;color:#212121;';
-  let infoRows = '';
-  const infoPairs = [
-    ['اسم الرحلة', trip.saveTitle || trip.tripName || '—'],
-    ['السائق', trip.driverName || '—'],
-    ['التاريخ', trip.date || '—'],
-    ['الحمولة', trip.cargoWeight ? trip.cargoWeight + ' طن' : '—'],
-  ];
-  infoPairs.forEach(([k,v])=>{
-    infoRows += `<tr><td style="padding:6px 0;color:#757575;font-size:13px;">${escHtml(k)}</td><td style="padding:6px 0;font-weight:700;font-size:14px;text-align:left;">${escHtml(v)}</td></tr>`;
-  });
-
-  let fundRows = '';
-  if(trip.fundExtras && trip.fundExtras.length){
-    fundRows += `<tr><td style="padding:6px 4px;font-weight:700;">العهدة</td><td style="padding:6px 4px;font-weight:700;text-align:left;">${escHtml(money(trip.funded||0))}</td></tr>`;
-    trip.fundExtras.forEach(s=>{
-      fundRows += `<tr><td style="padding:4px 4px 4px 18px;color:#757575;font-size:12.5px;">↳ ${escHtml(s.name || 'بدون تفاصيل')}</td><td style="padding:4px;color:#757575;font-size:12.5px;text-align:left;">${escHtml(money(s.amount||0))}</td></tr>`;
-    });
-  }
-
-  let itemRows = '';
-  const nonZeroRows = (trip.rows || []).filter(r => r.amount);
-  if(nonZeroRows.length === 0 && !fundRows){
-    itemRows = `<tr><td colspan="2" style="padding:10px 4px;color:#757575;text-align:center;">مفيش بنود مسجلة</td></tr>`;
+  if (subItems.length > 0) {
+    parentInput.value = totalSubs || '';
+    parentInput.readOnly = true;
+    parentInput.style.background = '#EDEDF3';
   } else {
-    nonZeroRows.forEach(r=>{
-      itemRows += `<tr><td style="padding:6px 4px;border-top:1px solid #eee;">${escHtml(r.name || 'بدون اسم')}</td><td style="padding:6px 4px;border-top:1px solid #eee;text-align:left;font-weight:700;">${escHtml(money(r.amount||0))}</td></tr>`;
-      if(r.subItems && r.subItems.length){
-        r.subItems.forEach(s=>{
-          itemRows += `<tr><td style="padding:4px 4px 4px 18px;color:#757575;font-size:12.5px;">↳ ${escHtml(s.name || 'بدون تفاصيل')}</td><td style="padding:4px;color:#757575;font-size:12.5px;text-align:left;">${escHtml(money(s.amount||0))}</td></tr>`;
-        });
+    parentInput.readOnly = false;
+    parentInput.style.background = '';
+  }
+  calculateFsSystem();
+}
+
+// دالة التحقق من المدخلات الرقمية وتشغيل الحساب التراكمي الحي للمجاميع
+function validateAndCalc(input) {
+  input.value = input.value.replace(/[^0-9.]/g, '');
+  calculateFsSystem();
+}
+
+// دالة الحساب الكلي الحي للمجاميع والمتبقي ونوع المؤشر (فائض أو عجز)
+function calculateFsSystem() {
+  let totalExpenses = 0;
+  
+  // تجميع كافة مبالغ البنود الرئيسية
+  document.querySelectorAll('.fs-amount').forEach(inp => {
+    const val = parseFloat(inp.value) || 0;
+    totalExpenses += val;
+    
+    // إعطاء خلفية ملونة تدل على أن السطر يحتوي على قيمة نشطة
+    if (val > 0) {
+      inp.closest('.fs-row').classList.add('has-value');
+    } else {
+      inp.closest('.fs-row').classList.remove('has-value');
+    }
+  });
+
+  document.getElementById('fsTotalValue').textContent = totalExpenses.toLocaleString('en-US') + " ج.م";
+
+  const funded = parseFloat(document.getElementById('fsFunded').value) || 0;
+  const remain = funded - totalExpenses;
+
+  const remainCard = document.getElementById('fsRemainCard');
+  const remainValueEl = document.getElementById('fsRemainValue');
+
+  // معالجة صيغة النص ولون الكارت بناءً على النتيجة المالية (موجب أم سالب)
+  if (remain < 0) {
+    remainCard.classList.add('fs-negative');
+    remainValueEl.textContent = Math.abs(remain).toLocaleString('en-US') + " ج.م عجز (مطلوب للدفع)";
+  } else {
+    remainCard.classList.remove('fs-negative');
+    remainValueEl.textContent = remain.toLocaleString('en-US') + " ج.م فائض";
+  }
+}
+
+// دالة التصفير الكامل لكافة المدخلات لإعادة تشغيل الحساب من جديد للرحلة التالية
+function resetFsCalculator() {
+  if(!confirm("هل تريد تصفير جميع قيم العهدة والمصاريف الحالية؟")) return;
+  document.getElementById('fsFunded').value = '';
+  document.querySelectorAll('.fs-amount').forEach(inp => {
+    inp.value = '';
+    inp.readOnly = false;
+    inp.style.background = '';
+    inp.closest('.fs-row').classList.remove('has-value');
+  });
+  document.querySelectorAll('.fs-item-detail').forEach(det => det.classList.remove('fs-open'));
+  document.querySelectorAll('.fs-row').forEach(row => row._subItems = []);
+  
+  initFsCalculator();
+  calculateFsSystem();
+}
+
+// دالة تصدير العهدة والبنود الفرعية كملف CSV داعم للعربية وإكسل
+function exportExpensesToCSV() {
+  let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // إدراج علامة BOM لدعم تشفير UTF-8 لملفات إكسل العربية
+  csvContent += "البند الرئيسي,التفصيل الفرعي,القيمة (ج.م)\n";
+  
+  fsDefaultItems.forEach((item, index) => {
+    const rowEl = document.getElementById(`fs-row-${index}`);
+    const mainAmount = document.getElementById(`fs-amount-${index}`).value || 0;
+    
+    // تصدير البند الرئيسي المالي
+    csvContent += `"${item.label}",,"${mainAmount}"\n`;
+    
+    // تصدير التفاصيل الفرعية إن وجدت بداخل مصفوفة البند
+    if(rowEl && rowEl._subItems && rowEl._subItems.length > 0) {
+      rowEl._subItems.forEach(sub => {
+        const subName = sub.name ? sub.name.replace(/"/g, '""') : 'تفصيل فرعي غير مسمى';
+        const subAmount = sub.amount || 0;
+        csvContent += `,"${subName}","${subAmount}"\n`;
+      });
+    }
+  });
+  
+  // تجميع الحسابات الإجمالية للرحلة بالتقرير
+  const funded = document.getElementById('fsFunded').value || 0;
+  const totalExp = parseFloat(document.getElementById('fsTotalValue').textContent.replace(/[^0-9.]/g, '')) || 0;
+  const remain = funded - totalExp;
+  const remainStatus = remain < 0 ? "عجز مطلوب دفعه" : "فائض متبقي";
+
+  csvContent += `\n`;
+  csvContent += `إجمالي العهدة المستلمة,,${funded} ج.م\n`;
+  csvContent += `إجمالي المصاريف الفعلية,,${totalExp} ج.م\n`;
+  csvContent += `الصافي والمؤشر المالي,,${Math.abs(remain)} ج.م (${remainStatus})\n`;
+
+  // إعداد رابط التحميل البرمجي
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  
+  const today = new Date().toISOString().slice(0,10);
+  link.setAttribute("download", `تسوية_عهدة_نقلة_${today}.csv`);
+  document.body.appendChild(link);
+  
+  link.click();
+  document.body.removeChild(link);
+}
+
+// وظيفة فتح وغلق القائمة المنسدلة للحاسبة
+function toggleCalculator() {
+  const content = document.getElementById('calculatorContent');
+  const arrow = document.getElementById('accordionArrow');
+  const toggleBtn = document.querySelector('.accordion-toggle');
+  
+  content.classList.toggle('open');
+  
+  if (content.classList.contains('open')) {
+    arrow.innerText = '▲';
+    toggleBtn.style.borderBottomLeftRadius = '0px';
+    toggleBtn.style.borderBottomRightRadius = '0px';
+  } else {
+    arrow.innerText = '▼';
+    toggleBtn.style.borderBottomLeftRadius = '16px';
+    toggleBtn.style.borderBottomRightRadius = '16px';
+  }
+}
+
+// معالجة وحفظ مستندات الـ POD للرحلة
+let uploadedPodImage = null;
+function handlePodUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      uploadedPodImage = e.target.result;
+      const preview = document.getElementById('podPreviewImg');
+      if (preview) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
       }
-    });
-  }
-
-  const remainColor = (trip.remain || 0) < 0 ? '#C62828' : '#2E7D32';
-
-  el.innerHTML = `
-    <div style="text-align:center;border-bottom:3px solid #3F51B5;padding-bottom:14px;margin-bottom:18px;">
-      <div style="font-weight:900;font-size:26px;color:#3F51B5;">🚛 FLYINGSTAR</div>
-      <div style="font-size:12.5px;color:#757575;margin-top:4px;">إيصال عهدة ومصاريف شاحنة</div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">${infoRows}</table>
-    <div style="font-weight:900;font-size:14px;color:#3F51B5;margin-bottom:8px;">تفاصيل المصاريف</div>
-    <table style="width:100%;border-collapse:collapse;font-size:13.5px;">${fundRows}${itemRows}</table>
-    <table style="width:100%;border-collapse:collapse;margin-top:16px;border-top:2px solid #212121;">
-      <tr><td style="padding:10px 4px 4px;font-weight:700;">إجمالي المصروف</td><td style="padding:10px 4px 4px;text-align:left;font-weight:900;color:#B8860B;">${escHtml(money(trip.total||0))}</td></tr>
-      <tr><td style="padding:4px;font-weight:700;">المتبقي من العهدة</td><td style="padding:4px;text-align:left;font-weight:900;color:${remainColor};">${escHtml(money(trip.remain||0))}</td></tr>
-    </table>
-    <div style="text-align:center;font-size:10.5px;color:#b0b0b8;margin-top:20px;">تم إنشاؤه بواسطة تطبيق FlyingStar بتاريخ ${escHtml(new Date().toLocaleDateString('ar-EG', {dateStyle:'medium'}))}</div>
-  `;
-  return el;
-}
-
-async function tripToPdfBlob(trip){
-  await ensurePdfLibs();
-  const el = buildReceiptElement(trip);
-  document.body.appendChild(el);
-  let blob;
-  try{
-    const canvas = await html2canvas(el, {scale:2, backgroundColor:'#ffffff'});
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new window.jspdf.jsPDF({unit:'mm', format:'a4'});
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const imgWidth = pageWidth - margin*2;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-    let heightLeft = imgHeight;
-    let position = margin;
-    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-    heightLeft -= (pageHeight - margin*2);
-    while(heightLeft > 0){
-      position = margin - (imgHeight - heightLeft);
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-      heightLeft -= (pageHeight - margin*2);
     }
-    blob = pdf.output('blob');
-  } finally {
-    el.remove();
-  }
-  return blob;
-}
-
-function downloadBlob(blob, filename){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=> URL.revokeObjectURL(url), 3000);
-}
-
-function setBtnBusy(btn, busyText){
-  if(!btn) return () => {};
-  const original = btn.textContent;
-  btn.textContent = busyText;
-  btn.classList.add('btn-busy');
-  return () => { btn.textContent = original; btn.classList.remove('btn-busy'); };
-}
-
-async function savePdfForTrip(trip, btn){
-  const restore = setBtnBusy(btn, '⏳ جارِ التجهيز...');
-  try{
-    const blob = await tripToPdfBlob(trip);
-    downloadBlob(blob, buildTripFilename(trip));
-  }catch(e){
-    console.error(e);
-    alert('تعذر إنشاء ملف PDF. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.');
-  }finally{
-    restore();
+    reader.readAsDataURL(file);
   }
 }
 
-async function shareTripWhatsApp(trip, btn){
-  const restore = setBtnBusy(btn, '⏳ جارِ التجهيز...');
-  try{
-    const blob = await tripToPdfBlob(trip);
-    const filename = buildTripFilename(trip);
-    const text = buildWhatsAppText(trip);
-    let file = null;
-    try{ file = new File([blob], filename, {type:'application/pdf'}); }catch(e){}
-    if(file && navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], title:'FlyingStar', text});
-    }else{
-      downloadBlob(blob, filename);
-      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-      alert('تم تحميل ملف PDF على جهازك. المشاركة المباشرة غير مدعومة على متصفحك، افتح واتساب واختر 📎 لإرفاق الملف يدويًا.');
-    }
-  }catch(e){
-    if(e && e.name === 'AbortError') return; // المستخدم ألغى المشاركة
-    console.error(e);
-    alert('تعذر تجهيز المشاركة. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.');
-  }finally{
-    restore();
+// قاعدة البيانات الافتراضية للرحلات
+let trips = JSON.parse(localStorage.getItem('trella_trips')) || [
+  { id: 101, from: "ميناء دمياط", to: "مستودعات السادس من أكتوبر", type: "جرار حاويات", weight: 28, price: 5200, status: "transit", driver: "أحمد منصور", progress: 65, pod: null },
+  { id: 102, from: "العاشر من رمضان", to: "أسيوط الجديدة", type: "تريلا مسطح", weight: 22, price: 7800, status: "pending", driver: null, progress: 0, pod: null }
+];
+
+function saveToStorage() {
+  localStorage.setItem('trella_trips', JSON.stringify(trips));
+  renderAll();
+}
+
+function switchRole(role) {
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  if(role === 'shipper') {
+    document.querySelectorAll('.view-btn')[0].classList.add('active');
+    document.getElementById('shipperPage').classList.add('active');
+  } else {
+    document.querySelectorAll('.view-btn')[1].classList.add('active');
+    document.getElementById('driverPage').classList.add('active');
   }
 }
 
-document.getElementById('pdfCurrent').addEventListener('click', (e)=> savePdfForTrip(collectCurrentTrip(), e.currentTarget));
-document.getElementById('waCurrent').addEventListener('click', (e)=> shareTripWhatsApp(collectCurrentTrip(), e.currentTarget));
+function createTripOrder() {
+  const from = document.getElementById('loadLoc').value.trim();
+  const to = document.getElementById('unloadLoc').value.trim();
+  const type = document.getElementById('tType').value;
+  const weight = document.getElementById('tWeight').value;
+  const price = document.getElementById('tPrice').value;
 
-async function renderSavedTrips(){
-  try{
-    const list = await store.list('trip:');
-    const keys = (list && list.keys) ? list.keys : [];
-    if(keys.length === 0){
-      savedLabelEl.style.display = 'none';
-      savedListEl.style.display = 'none';
+  if(!from || !to || !weight || !price) {
+    alert("برجاء إدخال كافة تفاصيل الشحنة والتسعير لرفع الطلب.");
+    return;
+  }
+
+  const newTrip = {
+    id: Math.floor(100 + Math.random() * 900),
+    from: from,
+    to: to,
+    type: type,
+    weight: parseFloat(weight),
+    price: parseFloat(price),
+    status: "pending",
+    driver: null,
+    progress: 0,
+    pod: null
+  };
+
+  trips.unshift(newTrip);
+  saveToStorage();
+  
+  document.getElementById('loadLoc').value = '';
+  document.getElementById('unloadLoc').value = '';
+  document.getElementById('tWeight').value = '';
+  document.getElementById('tPrice').value = '';
+  
+  alert("تم إدراج شحنتك بنظام تريلا بنجاح وتظهر الآن لكل السائقين المتاحين!");
+}
+
+function acceptTrip(id) {
+  const trip = trips.find(t => t.id === id);
+  if(trip) {
+    trip.status = 'loading';
+    trip.driver = 'كابتن سائق (أنت)';
+    saveToStorage();
+    alert("مبروك! قمت بقَبول النقلة بنجاح، توجه لموقع التحميل الآن.");
+  }
+}
+
+function updateStatus(id, nextStatus) {
+  const trip = trips.find(t => t.id === id);
+  if(trip) {
+    if (nextStatus === 'done' && !uploadedPodImage) {
+      alert("⚠️ نظام تريلا يلزمك برفع صورة بوليصة الشحن (e-POD) الموقعة أولاً لإثبات التسليم وصرف النولون!");
       return;
     }
-    savedLabelEl.style.display = 'block';
-    savedListEl.style.display = 'block';
-    savedListEl.innerHTML = '<div class="empty-hint">جارِ التحميل...</div>';
-    const sortedKeys = keys.slice().sort().reverse();
-    const rowsHtml = [];
-
-    for(const key of sortedKeys){
-      let trip;
-      try{
-        const res = await store.get(key);
-        trip = JSON.parse(res.value);
-      }catch(e){ continue; }
-
-      const row = document.createElement('div');
-      row.className = 'saved-row';
-      row.dataset.key = key;
-      const remClass = trip.remain < 0 ? 'rem-neg' : 'rem-pos';
-      const titleLine = trip.saveTitle ? `<div style="font-weight:700;font-size:13px;margin-bottom:2px;">${trip.saveTitle}</div>` : '';
-      row.innerHTML = `
-        <div class="s-top">
-          <div>
-            ${titleLine}
-            <div class="s-date">${trip.date}${trip.cargoWeight ? ' · ⚖️ ' + trip.cargoWeight + ' طن' : ''}</div>
-            <div class="s-values">مصروف ${trip.total.toLocaleString('en-US')} ج.م · <span class="${remClass}">متبقي ${trip.remain.toLocaleString('en-US')} ج.م</span></div>
-          </div>
-          <div class="s-actions">
-            <button class="s-pdf" title="حفظ PDF">📄</button>
-            <button class="s-wa" title="إرسال واتساب">📱</button>
-            <button class="s-del" title="حذف">✕</button>
-          </div>
-        </div>
-        <div class="s-detail">${renderTripDetailHtml(trip)}</div>
-      `;
-      row.querySelector('.s-top').addEventListener('click', (e)=>{
-        if(e.target.closest('.s-actions')) return;
-        row.classList.toggle('open');
-      });
-      row.querySelector('.s-pdf').addEventListener('click', (e)=>{
-        e.stopPropagation();
-        savePdfForTrip(trip, e.currentTarget);
-      });
-      row.querySelector('.s-wa').addEventListener('click', (e)=>{
-        e.stopPropagation();
-        shareTripWhatsApp(trip, e.currentTarget);
-      });
-      row.querySelector('.s-del').addEventListener('click', async (e)=>{
-        e.stopPropagation();
-        if(!window.confirm('متأكد إنك عايز تحذف الرحلة دي؟ الحذف نهائي.')) return;
-        try{ await store.delete(key); }catch(err){}
-        renderSavedTrips();
-      });
-      rowsHtml.push(row);
+    
+    trip.status = nextStatus;
+    if(nextStatus === 'transit') {
+      trip.progress = 35;
+      startRouteSimulation(id);
+    } else if(nextStatus === 'done') {
+      trip.progress = 100;
+      trip.pod = uploadedPodImage;
+      uploadedPodImage = null;
+      alert("🎉 تم تأكيد التسليم وإغلاق الرحلة بنجاح! تم تحويل قيمة الأرباح لمحفظتك اللوجستية.");
     }
-    savedListEl.innerHTML = '';
-    rowsHtml.forEach(r => savedListEl.appendChild(r));
-  }catch(e){
-    console.error('تعذر تحميل الرحلات المحفوظة', e);
-    savedListEl.innerHTML = '<div class="empty-hint">حصل خطأ أثناء تحميل الرحلات المحفوظة</div>';
+    saveToStorage();
   }
 }
 
-document.getElementById('saveTrip').addEventListener('click', async ()=>{
-  const parts = [];
-  if(tripNameEl.value.trim()) parts.push(tripNameEl.value.trim());
-  if(driverNameEl.value.trim()) parts.push(driverNameEl.value.trim());
-  parts.push(formatTripDate(tripDateEl.value));
-  const autoTitle = parts.join(' - ');
-
-  const trip = collectCurrentTrip();
-  trip.saveTitle = autoTitle;
-  if(trip.funded === 0 && trip.total === 0){
-    if(!window.confirm('الرحلة مفيهاش عهدة ولا مصاريف، تحفظها برضه؟')) return;
-  }
-  const key = `trip:${Date.now()}`;
-  try{
-    const result = await store.set(key, JSON.stringify(trip));
-    if(result){
-      alert(`تم حفظ "${autoTitle}" ✅`);
-      renderSavedTrips();
-    }else{
-      alert('حصل خطأ أثناء الحفظ، حاول تاني.');
+function startRouteSimulation(id) {
+  const interval = setInterval(() => {
+    const trip = trips.find(t => t.id === id);
+    if (trip && trip.status === 'transit') {
+      if (trip.progress < 95) {
+        trip.progress += 15;
+        saveToStorage();
+      } else {
+        clearInterval(interval);
+      }
+    } else {
+      clearInterval(interval);
     }
-  }catch(e){
-    alert('حصل خطأ أثناء الحفظ، حاول تاني.');
-  }
-});
+  }, 4000);
+}
 
-(async function init(){
-  if(usingLocalFallback){
-    const note = document.getElementById('footerNote');
-    if(note) note.textContent = 'الأرقام بتتحدث أوتوماتيك أول ما تكتب أي مبلغ · بياناتك محفوظة على نفس المتصفح والجهاز ده (هتتمسح لو مسحت بيانات المتصفح)';
+function getStatusLabel(status) {
+  switch(status) {
+    case 'pending': return `<span class="status-badge status-pending">انتظار سائق</span>`;
+    case 'loading': return `<span class="status-badge status-loading">جاري التحميل</span>`;
+    case 'transit': return `<span class="status-badge status-transit">في الطريق</span>`;
+    case 'done': return `<span class="status-badge status-done">تم التسليم ✓</span>`;
   }
-  await loadDraft();
-  calc();
-  renderSavedTrips();
-})();
+}
+
+function renderAll() {
+  // 1. بوابة الشاحن
+  const sContainer = document.getElementById('shipperTripsContainer');
+  sContainer.innerHTML = '';
+  trips.forEach(t => {
+    const item = document.createElement('div');
+    item.className = 'trip-item';
+    item.innerHTML = `
+      <div class="trip-header">
+        <span>📍 ${t.from} ⬅️ ${t.to}</span>
+        ${getStatusLabel(t.status)}
+      </div>
+      <div class="trip-body">
+        <span>نوع المقطورة: ${t.type} · الحمولة: ${t.weight}0 طن</span>
+        <span>السعر المتفق عليه: <strong>${t.price} ج.م</strong></span>
+        <span>السائق المعين: ${t.driver ? t.driver : 'لم يُحدد بعد'}</span>
+        ${t.pod ? `<div style="margin-top:5px; color:var(--success)">📄 مرفق صورة مستند التسليم الرقمي e-POD</div>` : ''}
+      </div>
+    `;
+    sContainer.appendChild(item);
+  });
+
+  // 2. سوق السائقين
+  const mContainer = document.getElementById('marketTripsContainer');
+  mContainer.innerHTML = '';
+  const pendingTrips = trips.filter(t => t.status === 'pending');
+  
+  if(pendingTrips.length === 0) {
+    mContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">لا توجد نقلات جديدة معروضة في السوق الآن.</div>`;
+  } else {
+    pendingTrips.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'trip-item';
+      item.innerHTML = `
+        <div class="trip-header">
+          <span>📦 من: ${t.from}</span>
+          <span style="color:var(--success); font-weight:900;">+ ${t.price} ج.م</span>
+        </div>
+        <div class="trip-body">
+          <span>إلى: ${t.to}</span>
+          <span>الحمولة: ${t.type} (${t.weight} طن)</span>
+          <button class="btn btn-outline" style="padding:6px; font-size:12px;" onclick="acceptTrip(${t.id})">قَبول وتأكيد الرحلة</button>
+        </div>
+      `;
+      mContainer.appendChild(item);
+    });
+  }
+
+  // 3. الرحلة النشطة للسائق
+  const activeContainer = document.getElementById('activeDriverTrip');
+  const activeTrip = trips.find(t => t.driver && t.status !== 'done');
+  
+  if(activeTrip) {
+    let actionBtn = '';
+    let mapHtml = '';
+    let podHtml = '';
+    
+    if(activeTrip.status === 'loading') {
+      actionBtn = `<button class="btn" style="background:var(--success)" onclick="updateStatus(${activeTrip.id}, 'transit')">🚚 اكتمل التحميل والتحرك بالطريق</button>`;
+    } else if(activeTrip.status === 'transit') {
+      podHtml = `
+        <div style="margin-top:10px; border-top:1px dashed #cbd5e1; padding-top:10px;">
+          <label style="font-size:12px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:5px;">📸 إثبات التسليم الرقمي (e-POD):</label>
+          <div class="pod-upload-btn" onclick="document.getElementById('podFileInput').click()">
+            📁 اضغط لتصوير أو رفع البوليصة الموقعة
+          </div>
+          <input type="file" id="podFileInput" accept="image/*" style="display:none" onchange="handlePodUpload(event)">
+          <img id="podPreviewImg" class="pod-preview" src="#" alt="معاينة البوليصة">
+        </div>
+      `;
+      actionBtn = `<button class="btn" style="background:var(--primary)" onclick="updateStatus(${activeTrip.id}, 'done')">📦 تأكيد تسليم الشحنة وتفريغها</button>`;
+      
+      mapHtml = `
+        <div class="map-box">
+          <div>🗺️ محاكاة نظام التتبع الحى التابع لتريلا (GPS)</div>
+          <div class="map-route">
+            <div class="map-progress" style="width: ${activeTrip.progress}%"></div>
+            <div class="map-truck" style="left: ${activeTrip.progress}%">🚛</div>
+          </div>
+          <div style="font-size:11px; margin-top:5px; color:var(--accent)">متبقي حوالي ${100 - activeTrip.progress}% للوصول للموقع النهائي</div>
+        </div>
+      `;
+    }
+    
+    activeContainer.innerHTML = `
+      <div class="trip-header">
+        <span>📍 ${activeTrip.from} ⬅️ ${activeTrip.to}</span>
+        ${getStatusLabel(activeTrip.status)}
+      </div>
+      <div class="trip-body" style="margin-bottom:10px;">
+        <span>النوع: ${activeTrip.type} · الوزن: ${activeTrip.weight} طن</span>
+        <span>الأرباح الصافية المستحقة: <strong>${activeTrip.price} ج.م</strong></span>
+      </div>
+      ${mapHtml}
+      ${podHtml}
+      ${actionBtn}
+    `;
+  } else {
+    activeContainer.innerHTML = `
+      <div style="text-align:center; color:var(--text-muted); font-size:13px; padding:20px;">
+        لا توجد رحلة نشطة مقبولة حالياً. توجه إلى سوق النقلات بالأسفل لقَبول رحلة.
+      </div>
+    `;
+  }
+}
+
+window.onload = function() {
+  initFsCalculator();
+  renderAll();
+};
 </script>
+
 </body>
 </html>
